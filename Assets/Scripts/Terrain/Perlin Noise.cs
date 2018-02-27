@@ -48,9 +48,36 @@ namespace ProceduralGenerationAddOn
             }
         }
 
-        public bool Interpolate()
+        public bool CalculateHeight(Vector3 position, float distanceBetweenCells)
         {
+            // The positions of the closest grid positions
+            Vector3 topLeftPos = new Vector2(Mathf.FloorToInt(position.x), Mathf.CeilToInt(position.y));
+            Vector3 topRightPos = new Vector2(Mathf.FloorToInt(position.x), Mathf.FloorToInt(position.y));
+            Vector3 botLeftPos = new Vector2(Mathf.CeilToInt(position.x), Mathf.CeilToInt(position.y));
+            Vector3 botRightPos = new Vector2(Mathf.CeilToInt(position.x), Mathf.FloorToInt(position.y));
 
+            // Get the gradients of the nearest grid positions
+            Vector3 topLeftGradient = m_grid[(int)topLeftPos.x, (int)topLeftPos.y].Gradient;
+            Vector3 botLeftGradient = m_grid[(int)botLeftPos.x, (int)botLeftPos.y].Gradient;
+            Vector3 topRightGradient = m_grid[(int)topRightPos.x, (int)topRightPos.y].Gradient;
+            Vector3 botRightGradient = m_grid[(int)botRightPos.x, (int)botRightPos.y].Gradient;
+
+            // Get the directions
+            Vector3 topLeftDirection = position - topLeftPos;
+            Vector3 botLeftDirection = position - botLeftPos;
+            Vector3 topRightDirection = position - topRightPos;
+            Vector3 botRightDirection = position - botRightPos;
+
+            // Get the dot products of each one
+            float topLeftDot = Vector3.Dot(topLeftGradient, topLeftDirection);
+            float botLeftDot = Vector3.Dot(botLeftGradient, botLeftDirection);
+            float topRightDot = Vector3.Dot(topRightGradient, topRightDirection);
+            float botRightDot = Vector3.Dot(botRightGradient, botRightDirection);
+
+            // Lerp to get the final outcome of the height
+            float lerpTopAndBotLeft = Mathf.Lerp(topLeftDot, botLeftDot, position.x);
+            float lerpTopAndBotRight = Mathf.Lerp(topLeftDot, botLeftDot, position.x);
+            float allPointsLerp = Mathf.Lerp(lerpTopAndBotLeft, lerpTopAndBotRight, position.y);
 
             return true;
         }
