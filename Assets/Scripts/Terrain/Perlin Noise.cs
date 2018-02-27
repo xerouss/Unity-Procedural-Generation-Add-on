@@ -21,8 +21,27 @@ namespace ProceduralGenerationAddOn
         // TODO: Add more customisation for the user
         PNGridNode[,] m_grid;
         TerrainData m_terrainData;
+        float m_maxHeight;
+        Vector2 m_size;
+
+        public float MaxHeight
+        {
+            get
+            {
+                return m_maxHeight;
+            }
+
+            set
+            {
+                m_maxHeight = value;
+            }
+        }
 
         // TODO: Add extra parameters for the user to change
+        /// <summary>
+        /// Creates the grid for the perlin noise
+        /// </summary>
+        /// <param name="size">The size of the grid</param>
         public void CreateGrid(Vector2 size)
         {
             // Create the grid with the passed size
@@ -46,51 +65,93 @@ namespace ProceduralGenerationAddOn
                     m_grid[x, y].Gradient = gradient;
                 }
             }
+
+            m_terrainData = new TerrainData();
+            m_terrainData.size = size;
         }
 
-        public bool CalculateHeight(Vector3 position, float distanceBetweenCells)
+        /// <summary>
+        /// Calculate the height of the position
+        /// </summary>
+        /// <param name="position">The position to calculate the height at</param>
+        /// <param name="distanceBetweenCells">Distance between each grid position</param>
+        /// <returns>Height</returns>
+        public float CalculateHeight(Vector3 position, float distanceBetweenCells)
         {
-            // The positions of the closest grid positions
-            Vector3 topLeftPos = new Vector2(Mathf.FloorToInt(position.x), Mathf.CeilToInt(position.y));
-            Vector3 topRightPos = new Vector2(Mathf.FloorToInt(position.x), Mathf.FloorToInt(position.y));
-            Vector3 botLeftPos = new Vector2(Mathf.CeilToInt(position.x), Mathf.CeilToInt(position.y));
-            Vector3 botRightPos = new Vector2(Mathf.CeilToInt(position.x), Mathf.FloorToInt(position.y));
-
-            // Get the gradients of the nearest grid positions
-            Vector3 topLeftGradient = m_grid[(int)topLeftPos.x, (int)topLeftPos.y].Gradient;
-            Vector3 botLeftGradient = m_grid[(int)botLeftPos.x, (int)botLeftPos.y].Gradient;
-            Vector3 topRightGradient = m_grid[(int)topRightPos.x, (int)topRightPos.y].Gradient;
-            Vector3 botRightGradient = m_grid[(int)botRightPos.x, (int)botRightPos.y].Gradient;
-
-            // Get the directions
-            Vector3 topLeftDirection = position - topLeftPos;
-            Vector3 botLeftDirection = position - botLeftPos;
-            Vector3 topRightDirection = position - topRightPos;
-            Vector3 botRightDirection = position - botRightPos;
-
-            // Get the dot products of each one
-            float topLeftDot = Vector3.Dot(topLeftGradient, topLeftDirection);
-            float botLeftDot = Vector3.Dot(botLeftGradient, botLeftDirection);
-            float topRightDot = Vector3.Dot(topRightGradient, topRightDirection);
-            float botRightDot = Vector3.Dot(botRightGradient, botRightDirection);
+            // Get the dot product of each grid location corners by using their direction from the position and gradient
+            float topLeftDot = GetLerpValue(Mathf.FloorToInt(position.x), Mathf.CeilToInt(position.y), position);
+            float botLeftDot = GetLerpValue(Mathf.FloorToInt(position.x), Mathf.FloorToInt(position.y), position);
+            float topRightDot = GetLerpValue(Mathf.CeilToInt(position.x), Mathf.CeilToInt(position.y), position);
+            float botRightDot = GetLerpValue(Mathf.CeilToInt(position.x), Mathf.FloorToInt(position.y), position);
 
             // Lerp to get the final outcome of the height
             float lerpTopAndBotLeft = Mathf.Lerp(topLeftDot, botLeftDot, position.x);
-            float lerpTopAndBotRight = Mathf.Lerp(topLeftDot, botLeftDot, position.x);
-            float allPointsLerp = Mathf.Lerp(lerpTopAndBotLeft, lerpTopAndBotRight, position.y);
-
-            return true;
+            float lerpTopAndBotRight = Mathf.Lerp(topRightDot, botRightDot, position.x);
+            return Mathf.Lerp(lerpTopAndBotLeft, lerpTopAndBotRight, position.y);
         }
 
-        public void GetTerrain()
+        /// <summary>
+        /// Get the value to use for the height lerp
+        /// </summary>
+        /// <param name="gridPointX">X position of the grid</param>
+        /// <param name="gridPointY">Y position of the grid</param>
+        /// <param name="position">The position to change</param>
+        /// <returns>Lerp value</returns>
+        public float GetLerpValue(int gridPointX, int gridPointY, Vector3 position)
+        {
+            // Save the grid position
+            Vector3 gridPos = new Vector3(gridPointX, gridPointY);
+
+            // Get the gradient of the grid point
+            Vector3 gradient = m_grid[gridPointX, gridPointY].Gradient;
+
+            // Calculate the direction from the position to the grid position
+            Vector3 direction = position - gridPos;
+
+            // Return the scalar value from the dot product
+            return Vector3.Dot(gradient, direction);
+        }
+
+        /// <summary>
+        /// Get the terrain in the scene, if there isn't spawn one
+        /// </summary>
+        public void SetTerrain()
         {
             // If there is no current terrain
-            if(Terrain.activeTerrain == null)
+            if (Terrain.activeTerrain == null)
             {
                 // Create the terrain data with the default data
-                m_terrainData = new TerrainData();
+                //m_terrainData = new TerrainData();
                 Terrain.CreateTerrainGameObject(m_terrainData);
             }
+            else Terrain.activeTerrain.terrainData = m_terrainData;
+        }
+
+        float NormaliseFloat(float value, float min, float max)
+        {
+            return (value - (min * value)) / ((max * value) - (min * value));
+        }
+
+        public void CreateTerrain()
+        {
+
+            // Max y uses x bound because 
+            int maxX = Mathf.FloorToInt(m_terrainData.size.x);
+            int maxY = Mathf.FloorToInt(m_terrainData.size.y);
+
+            float[,] heights = new float[maxX, maxY];
+
+            for (int x = 0; x < maxX; x++)
+            {
+                for (int y = 0; y < maxY; y++)
+                {
+                    float height = NormaliseFloat(CalculateHeight(new Vector3(x, y), 0), 0, m_maxHeight);
+                    heights[x, y] = height;
+                }
+            }
+
+            m_terrainData.SetHeights(1, 1, heights);
+            SetTerrain();
         }
     }
 }

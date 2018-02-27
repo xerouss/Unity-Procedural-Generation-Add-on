@@ -51,7 +51,7 @@ namespace ProceduralGenerationAddOn
             if(GUI.Button(new Rect(10, 10, 150, 50), "Generate Level"))
             {
                 m_perlinNoise.CreateGrid(new Vector2(10, 10));
-                m_perlinNoise.GetTerrain();
+                m_perlinNoise.CreateTerrain();
             }
         }
     }
