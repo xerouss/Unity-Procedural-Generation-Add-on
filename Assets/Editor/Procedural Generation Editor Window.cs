@@ -24,7 +24,7 @@ namespace ProceduralGenerationAddOn
 
         #region Private
 
-        PerlinNoise m_perlinNoise;
+        static PerlinNoise m_perlinNoise;
 
         #endregion
 
@@ -33,17 +33,12 @@ namespace ProceduralGenerationAddOn
         // Where to access the window
         [MenuItem("Window/Procedural Generate Level")]
 
-        // On start of the program
-        private void Awake()
-        {
-            m_perlinNoise = new PerlinNoise();
-        }
-
         /// <summary>
         /// How to display the window
         /// </summary>
         public static void ShowWindow()
         {
+            m_perlinNoise = new PerlinNoise();
             EditorWindow.GetWindow(typeof(ProceduralGenerationEditorWindow));
         }
 
@@ -56,6 +51,7 @@ namespace ProceduralGenerationAddOn
             if(GUI.Button(new Rect(10, 10, 150, 50), "Generate Level"))
             {
                 m_perlinNoise.CreateGrid(new Vector2(10, 10));
+                m_perlinNoise.GetTerrain();
             }
         }
     }

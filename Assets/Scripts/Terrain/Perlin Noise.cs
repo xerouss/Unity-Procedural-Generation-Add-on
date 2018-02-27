@@ -20,6 +20,7 @@ namespace ProceduralGenerationAddOn
     {
         // TODO: Add more customisation for the user
         PNGridNode[,] m_grid;
+        TerrainData m_terrainData;
 
         // TODO: Add extra parameters for the user to change
         public void CreateGrid(Vector2 size)
@@ -34,6 +35,9 @@ namespace ProceduralGenerationAddOn
             {
                 for (int y = 0; y < size.y; y++)
                 {
+                    // Create the nodes for the grid position so the gradient can be set
+                    m_grid[x, y] = new PNGridNode();
+
                     // TODO: Change the range of these to the user's inputted ones
                     gradient = new Vector3(Random.Range(0, 10), 
                         Random.Range(0, 10), 
@@ -49,6 +53,17 @@ namespace ProceduralGenerationAddOn
 
 
             return true;
+        }
+
+        public void GetTerrain()
+        {
+            // If there is no current terrain
+            if(Terrain.activeTerrain == null)
+            {
+                // Create the terrain data with the default data
+                m_terrainData = new TerrainData();
+                Terrain.CreateTerrainGameObject(m_terrainData);
+            }
         }
     }
 }
