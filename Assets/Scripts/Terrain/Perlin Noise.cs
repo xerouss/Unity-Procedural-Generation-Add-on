@@ -18,6 +18,12 @@ namespace ProceduralGenerationAddOn
 {
     public class PerlinNoise
     {
+        #region Constants
+        const float startY = 1;
+
+        #endregion
+
+
         // TODO: Add more customisation for the user
         PNGridNode[,] m_grid;
         TerrainData m_terrainData;
@@ -67,7 +73,9 @@ namespace ProceduralGenerationAddOn
             }
 
             m_terrainData = new TerrainData();
-            m_terrainData.size = size;
+
+            // The size y value is used in the z since it is spawned in 3D space but the grid is 2D
+            m_terrainData.size = new Vector3(size.x, startY, size.y);
         }
 
         /// <summary>
@@ -136,8 +144,8 @@ namespace ProceduralGenerationAddOn
         {
 
             // Max y uses x bound because 
-            int maxX = Mathf.FloorToInt(m_terrainData.size.x);
-            int maxY = Mathf.FloorToInt(m_terrainData.size.y);
+            int maxX = m_terrainData.heightmapWidth;
+            int maxY = m_terrainData.heightmapHeight;
 
             float[,] heights = new float[maxX, maxY];
 
@@ -145,12 +153,12 @@ namespace ProceduralGenerationAddOn
             {
                 for (int y = 0; y < maxY; y++)
                 {
-                    float height = NormaliseFloat(CalculateHeight(new Vector3(x, y), 0), 0, m_maxHeight);
-                    heights[x, y] = height;
+                   // float height = NormaliseFloat(CalculateHeight(new Vector3(x, y), 0), 0, m_maxHeight);
+                    heights[x, y] = Random.Range(0.0f, 1.0f);
                 }
             }
 
-            m_terrainData.SetHeights(1, 1, heights);
+            m_terrainData.SetHeights(0, 0, heights);
             SetTerrain();
         }
     }
