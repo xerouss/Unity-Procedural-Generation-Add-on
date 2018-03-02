@@ -27,7 +27,7 @@ namespace ProceduralGenerationAddOn
         // TODO: Add more customisation for the user
         PNGridNode[,] m_grid;
         TerrainData m_terrainData;
-        float m_maxHeight = 20;
+        float m_maxHeight = 1;
         Vector2 m_size;
 
         public float MaxHeight
@@ -64,9 +64,9 @@ namespace ProceduralGenerationAddOn
                     m_grid[x, y] = new PNGridNode();
 
                     // TODO: Change the range of these to the user's inputted ones
-                    gradient = new Vector3(Random.Range(0, 10),
-                        Random.Range(0, 10),
-                        Random.Range(0, 10));
+                    gradient = new Vector3(Random.Range(0f, 1f),
+                        Random.Range(0f, 1f),
+                        Random.Range(0f, 1f));
 
                     m_grid[x, y].Gradient = gradient;
                 }
@@ -160,7 +160,8 @@ namespace ProceduralGenerationAddOn
         {
             if (value == 0) return value;
 
-            return (value - (min * value)) / ((max * value) - (min * value));
+            return Mathf.InverseLerp(min, max, value);
+           // return (value - (min * value)) / ((max * value) - (min * value));
         }
 
 
