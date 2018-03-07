@@ -25,6 +25,7 @@ namespace ProceduralGenerationAddOn
         #region Private
 
         static PerlinNoise m_perlinNoise;
+        //int heightMapRes = 0;
 
         #endregion
 
@@ -47,10 +48,12 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         void OnGUI()
         {
+            //heightMapRes = (int)GUI.HorizontalSlider(new Rect(75, 75, 100, 30), heightMapRes, 0, 255);
+            //m_perlinNoise.SetHeightMapRes(heightMapRes);
+
             // Temp, here to test the level creation
             if(GUI.Button(new Rect(10, 10, 150, 50), "Generate Level"))
             {
-                m_perlinNoise.CreateGrid(new Vector2(10, 10));
                 m_perlinNoise.CreateTerrain();
             }
         }
