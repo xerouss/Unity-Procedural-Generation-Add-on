@@ -1,7 +1,7 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
 //	Last Edited On:	   08/03/2018
-//	File:			   Perlin Noise.cs
+//	File:			   PerlinNoise.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
 
@@ -111,7 +111,7 @@ namespace ProceduralGenerationAddOn
         /// <param name="y">Y location</param>
         /// <param name="z">Z location</param>
         /// <returns>Height</returns>
-        public float perlin(float x, float y, float z)
+        public float Perlin(float x, float y, float z)
         {
             // If the perlin noise is done again
             // Modular it so it is in the correct square
@@ -129,9 +129,9 @@ namespace ProceduralGenerationAddOn
 
             // Calculate the fade amount for the position
             // This is used in the lerp
-            float fadeX = fade(posX);
-            float fadeY = fade(posY);
-            float fadeZ = fade(posZ);
+            float fadeX = Fade(posX);
+            float fadeY = Fade(posY);
+            float fadeZ = Fade(posZ);
 
             // Find what cube the location is in
             int cubeX = (int)x & permutationLengthBase0;
@@ -139,24 +139,24 @@ namespace ProceduralGenerationAddOn
             int cubeZ = (int)z & permutationLengthBase0;
 
             // Get the hash values for each of the cube corners
-            int aaa = GetHashValue(cubeX,       cubeY,      cubeZ);       // Bot left front
-            int aba = GetHashValue(cubeX,       inc(cubeY), cubeZ);       // Top left front
-            int aab = GetHashValue(cubeX,       cubeY,      inc(cubeZ));  // Bot left back
-            int abb = GetHashValue(cubeX,       inc(cubeY), inc(cubeZ));  // Top left back
-            int baa = GetHashValue(inc(cubeX),  cubeY,      cubeZ);       // Bot right front
-            int bba = GetHashValue(inc(cubeX),  inc(cubeY), cubeZ);       // Top right front
-            int bab = GetHashValue(inc(cubeX),  cubeY,      inc(cubeZ));  // Bot right back
-            int bbb = GetHashValue(inc(cubeX),  inc(cubeY), inc(cubeZ));  // Top right back
+            int aaa = GetHashValue(cubeX,               cubeY,              cubeZ);             // Bot left front
+            int aba = GetHashValue(cubeX,               Increment(cubeY),   cubeZ);             // Top left front
+            int aab = GetHashValue(cubeX,               cubeY,              Increment(cubeZ));  // Bot left back
+            int abb = GetHashValue(cubeX,               Increment(cubeY),   Increment(cubeZ));  // Top left back
+            int baa = GetHashValue(Increment(cubeX),    cubeY,              cubeZ);             // Bot right front
+            int bba = GetHashValue(Increment(cubeX),    Increment(cubeY),   cubeZ);             // Top right front
+            int bab = GetHashValue(Increment(cubeX),    cubeY,              Increment(cubeZ));  // Bot right back
+            int bbb = GetHashValue(Increment(cubeX),    Increment(cubeY),   Increment(cubeZ));  // Top right back
 
             // Get the dot product of the gradient vector and the distance to the corner from the position
-            float gradientAAA = grad(aaa, posX,     posY,       posZ);
-            float gradientABA = grad(aba, posX,     posY - 1,   posZ);
-            float gradientAAB = grad(aab, posX,     posY,       posZ - 1);
-            float gradientABB = grad(abb, posX,     posY - 1,   posZ - 1);
-            float gradientBAA = grad(baa, posX - 1, posY,       posZ);
-            float gradientBBA = grad(bba, posX - 1, posY - 1,   posZ);
-            float gradientBAB = grad(bab, posX - 1, posY,       posZ - 1);
-            float gradientBBB = grad(bbb, posX - 1, posY - 1,   posZ - 1);
+            float gradientAAA = Gradient(aaa, posX,     posY,       posZ);
+            float gradientABA = Gradient(aba, posX,     posY - 1,   posZ);
+            float gradientAAB = Gradient(aab, posX,     posY,       posZ - 1);
+            float gradientABB = Gradient(abb, posX,     posY - 1,   posZ - 1);
+            float gradientBAA = Gradient(baa, posX - 1, posY,       posZ);
+            float gradientBBA = Gradient(bba, posX - 1, posY - 1,   posZ);
+            float gradientBAB = Gradient(bab, posX - 1, posY,       posZ - 1);
+            float gradientBBB = Gradient(bbb, posX - 1, posY - 1,   posZ - 1);
 
             // Linear interpolation of the points
             float x1, x2, y1, y2;
@@ -204,7 +204,7 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         /// <param name="value">The value to fade</param>
         /// <returns>The value faded</returns>
-        public float fade(float value)
+        public float Fade(float value)
         {
             // This formula was from Ken Perlin's implementation
             return value * value * value * (value * (value * 6 - 15) + 10);
@@ -215,7 +215,7 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         /// <param name="num">Number to increment</param>
         /// <returns>Incremented value</returns>
-        public int inc(int num)
+        public int Increment(int num)
         {
             num++;
 
@@ -233,7 +233,7 @@ namespace ProceduralGenerationAddOn
         /// <param name="y">Y Position</param>
         /// <param name="z">Z Position</param>
         /// <returns>Gradient</returns>
-        public float grad(int hash, float x, float y, float z)
+        public float Gradient(int hash, float x, float y, float z)
         {
             // This is used instead of Ken Perlin's way of doing it
             // Because this is meant to be faster and easier to read
@@ -297,7 +297,7 @@ namespace ProceduralGenerationAddOn
                 for (int y = 0; y < maxY; y++)
                 {
                     // Z had to be a random amount or else it does not work
-                    heights[x, y] = perlin((float)x, (float)y, Random.Range(0f, 1000f));
+                    heights[x, y] = Perlin((float)x, (float)y, Random.Range(0f, 1000f));
                 }
             }
 
