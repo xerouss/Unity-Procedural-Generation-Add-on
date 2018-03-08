@@ -38,18 +38,7 @@ namespace ProceduralGenerationAddOn
 
         int m_levelType = 0;
         string[] m_levelTypeOptions = { "Terrain", "Dungeon" };
-
-        #region Terrain Variables
         static PerlinNoise m_perlinNoise;
-        Vector3 m_terrainSize = new Vector3(10, 1, 10);
-        int m_heightmapResolution = 32;
-        int m_multiplyFade = 6;
-        int m_minusFade = 15;
-        int m_additionFade = 10;
-        int m_repeatAmount = 0;
-        float m_minZValue = 0;
-        float m_maxZValue = 1000;
-        #endregion
 
         #region Style Variables
         static GUIStyle m_header1Style;
@@ -130,7 +119,10 @@ namespace ProceduralGenerationAddOn
             // Create a new GameObject that contains the level
             if(GUILayout.Button("Create Level"))
             {
-                m_perlinNoise.CreateTerrain();
+                if (m_levelType == (int)LevelTypes.TERRAIN)
+                {
+                    m_perlinNoise.CreateTerrain();
+                }
             }
 
             // Create the level using the existing GameObject
@@ -156,28 +148,28 @@ namespace ProceduralGenerationAddOn
             EditorGUILayout.Space();
 
             // Terrain size
-            m_terrainSize = EditorGUILayout.Vector3Field("Terrain Size:", m_terrainSize);
+            m_perlinNoise.TerrainSize = EditorGUILayout.Vector3Field(new GUIContent("Terrain Size:", "X = Width, Y = Higher the spikes in the level are, Z = Depth") , m_perlinNoise.TerrainSize);
             EditorGUILayout.Space();
 
             // Heightmap Resolution
-            m_heightmapResolution = EditorGUILayout.IntField("Heightmap Resolution: ", m_heightmapResolution);
+            m_perlinNoise.HeightmapResolution = EditorGUILayout.IntField(new GUIContent("Heightmap Resolution: ", "Default = 32"), m_perlinNoise.HeightmapResolution);
             EditorGUILayout.Space();
 
             // Repeat
-            m_repeatAmount = EditorGUILayout.IntField("Repeat Amount: ", m_repeatAmount);
+            m_perlinNoise.RepeatAmount = EditorGUILayout.IntField("Repeat Amount: ", m_perlinNoise.RepeatAmount);
             EditorGUILayout.Space();
 
             // Fade Change
             GUILayout.Label("Fade Change", m_header3Style);
-            m_multiplyFade = EditorGUILayout.IntField("Multiply Value: ", m_multiplyFade);
-            m_minusFade = EditorGUILayout.IntField("Minus Value: ", m_minusFade);
-            m_additionFade = EditorGUILayout.IntField("Addition Value: ", m_additionFade);
+            m_perlinNoise.MultiplyFade = EditorGUILayout.IntField(new GUIContent("Multiply Value: ", "Default = 6"), m_perlinNoise.MultiplyFade);
+            m_perlinNoise.MinusFade = EditorGUILayout.IntField(new GUIContent("Minus Value: ", "Default = 15"), m_perlinNoise.MinusFade);
+            m_perlinNoise.AdditionFade = EditorGUILayout.IntField(new GUIContent("Addition Value: ", "Default = 10"), m_perlinNoise.AdditionFade);
             EditorGUILayout.Space();
 
             // Terrain Z
             GUILayout.Label("Terrain Z Value", m_header3Style);
-            m_minZValue = EditorGUILayout.FloatField("Minimum: ", m_minZValue);
-            m_maxZValue = EditorGUILayout.FloatField("Maximum: ", m_maxZValue);
+            m_perlinNoise.MinZValue = EditorGUILayout.FloatField("Minimum: ", m_perlinNoise.MinZValue);
+            m_perlinNoise.MaxZValue = EditorGUILayout.FloatField("Maximum: ", m_perlinNoise.MaxZValue);
             EditorGUILayout.Space();
         }
 

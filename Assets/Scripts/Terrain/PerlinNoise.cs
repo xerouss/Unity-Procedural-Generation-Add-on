@@ -28,6 +28,17 @@ namespace ProceduralGenerationAddOn
     public class PerlinNoise
     {
         #region Constants
+        const float defaultTerrainXSize = 10;
+        const float defaultTerrainYSize = 1;
+        const float defaultTerrainZSize = 10;
+        const int defaultHeightmapRes = 32;
+        const int defaultMultiplyFade = 6;
+        const int defaultMinusFade = 15;
+        const int defaultAdditionFade = 10;
+        const int defaultRepeatAmount = 0;
+        const int defaultMinZ = 0;
+        const int defaultMaxZ = 1000;
+
         const int permutationLength = 256;
         const int permutationLengthBase0 = 255;
         const int overFlowPermutaitonIncrease = 2;
@@ -74,8 +85,128 @@ namespace ProceduralGenerationAddOn
         // The permutation table which will be used
         // Is the overflow permutation for the values that are needed one above the max in the permutation
         int[] m_overPerm;
-        int m_repeatAmount = 0;
         TerrainData m_terrainData;
+
+        Vector3 m_terrainSize = new Vector3(defaultTerrainXSize, defaultTerrainYSize, defaultTerrainZSize);
+        int m_heightmapResolution = defaultHeightmapRes;
+        int m_multiplyFade = defaultMultiplyFade;
+        int m_minusFade = defaultMinusFade;
+        int m_additionFade = defaultAdditionFade;
+        int m_repeatAmount = defaultRepeatAmount;
+        float m_minZValue = defaultMinZ;
+        float m_maxZValue = defaultMaxZ;
+
+
+        #endregion
+
+        #region Properties
+        // Can't set the terrain size and the heightmap res in the
+        // Property because it will randomly delete the level heightmap
+
+        public Vector3 TerrainSize
+        {
+            get
+            {
+                return m_terrainSize;
+            }
+
+            set
+            {
+                m_terrainSize = value;
+            }
+        }
+
+        public int HeightmapResolution
+        {
+            get
+            {
+                return m_heightmapResolution;
+            }
+
+            set
+            {
+                m_heightmapResolution = value;
+            }
+        }
+
+        public int MultiplyFade
+        {
+            get
+            {
+                return m_multiplyFade;
+            }
+
+            set
+            {
+                m_multiplyFade = value;
+            }
+        }
+
+        public int MinusFade
+        {
+            get
+            {
+                return m_minusFade;
+            }
+
+            set
+            {
+                m_minusFade = value;
+            }
+        }
+
+        public int AdditionFade
+        {
+            get
+            {
+                return m_additionFade;
+            }
+
+            set
+            {
+                m_additionFade = value;
+            }
+        }
+
+        public int RepeatAmount
+        {
+            get
+            {
+                return m_repeatAmount;
+            }
+
+            set
+            {
+                m_repeatAmount = value;
+            }
+        }
+
+        public float MinZValue
+        {
+            get
+            {
+                return m_minZValue;
+            }
+
+            set
+            {
+                m_minZValue = value;
+            }
+        }
+
+        public float MaxZValue
+        {
+            get
+            {
+                return m_maxZValue;
+            }
+
+            set
+            {
+                m_maxZValue = value;
+            }
+        }
+
 
         #endregion
 
@@ -96,9 +227,6 @@ namespace ProceduralGenerationAddOn
 
             // Create the terrain data to output the perlin to
             m_terrainData = new TerrainData();
-
-            // Y changes how high the spikes are
-            m_terrainData.size = new Vector3(10, 1, 10);
         }
 
         // All functions used in the Perlin Noise
@@ -115,11 +243,11 @@ namespace ProceduralGenerationAddOn
         {
             // If the perlin noise is done again
             // Modular it so it is in the correct square
-            if(m_repeatAmount > 0)
+            if(RepeatAmount > 0)
             {
-                x = x % m_repeatAmount;
-                y = y % m_repeatAmount;
-                z = z % m_repeatAmount;
+                x = x % RepeatAmount;
+                y = y % RepeatAmount;
+                z = z % RepeatAmount;
             }
 
             // The position in the cube
@@ -207,7 +335,7 @@ namespace ProceduralGenerationAddOn
         public float Fade(float value)
         {
             // This formula was from Ken Perlin's implementation
-            return value * value * value * (value * (value * 6 - 15) + 10);
+            return value * value * value * (value * (value * MultiplyFade - MinusFade) + AdditionFade);
         }
 
         /// <summary>
@@ -220,7 +348,7 @@ namespace ProceduralGenerationAddOn
             num++;
 
             // Makes sure the number still repeats in the permutation
-            if (m_repeatAmount > 0) num %= m_repeatAmount;
+            if (RepeatAmount > 0) num %= RepeatAmount;
 
             return num;
         }
@@ -284,6 +412,11 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public void CreateTerrain()
         {
+            // Set the heightmap res and terrain size here or else it won't change
+            // Can't do it in the property because it will randomly delete the level heightmap
+            m_terrainData.heightmapResolution = m_heightmapResolution;
+            m_terrainData.size = m_terrainSize;
+
             // Get the width and height of the terrain's height map
             int maxX = m_terrainData.heightmapWidth;
             int maxY = m_terrainData.heightmapHeight;
@@ -297,7 +430,7 @@ namespace ProceduralGenerationAddOn
                 for (int y = 0; y < maxY; y++)
                 {
                     // Z had to be a random amount or else it does not work
-                    heights[x, y] = Perlin((float)x, (float)y, Random.Range(0f, 1000f));
+                    heights[x, y] = Perlin((float)x, (float)y, Random.Range(MinZValue, MaxZValue));
                 }
             }
 
@@ -307,12 +440,6 @@ namespace ProceduralGenerationAddOn
             // Create the terrain with the new height map
             SetTerrain();
         }
-
-        public void SetHeightMapRes(int res)
-        {
-            m_terrainData.heightmapResolution = res;
-        }
-
         #endregion
     }
 }
