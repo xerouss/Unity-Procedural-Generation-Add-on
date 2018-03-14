@@ -38,7 +38,7 @@ namespace ProceduralGenerationAddOn
 
         int m_levelType = 0;
         string[] m_levelTypeOptions = { "Terrain", "Dungeon" };
-        static PerlinNoise m_perlinNoise;
+        static PerlinNoiseOld m_perlinNoise;
 
         #region Style Variables
         static GUIStyle m_header1Style;
@@ -67,7 +67,7 @@ namespace ProceduralGenerationAddOn
             CreateStyles();
 
             // Create the perlin noise so it can be used
-            m_perlinNoise = new PerlinNoise();
+            m_perlinNoise = new PerlinNoiseOld(256 * 2);
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace ProceduralGenerationAddOn
             {
                 if (m_levelType == (int)LevelTypes.TERRAIN)
                 {
-                    m_perlinNoise.CreateTerrain();
+                    m_perlinNoise.SetTerrainData();
                 }
             }
 
@@ -156,20 +156,23 @@ namespace ProceduralGenerationAddOn
             EditorGUILayout.Space();
 
             // Repeat
-            m_perlinNoise.RepeatAmount = EditorGUILayout.IntField("Repeat Amount: ", m_perlinNoise.RepeatAmount);
-            EditorGUILayout.Space();
+            //m_perlinNoise.RepeatAmount = EditorGUILayout.IntField("Repeat Amount: ", m_perlinNoise.RepeatAmount);
+            //EditorGUILayout.Space();
 
             // Fade Change
-            GUILayout.Label("Fade Change", m_header3Style);
-            m_perlinNoise.MultiplyFade = EditorGUILayout.IntField(new GUIContent("Multiply Value: ", "Default = 6"), m_perlinNoise.MultiplyFade);
-            m_perlinNoise.MinusFade = EditorGUILayout.IntField(new GUIContent("Minus Value: ", "Default = 15"), m_perlinNoise.MinusFade);
-            m_perlinNoise.AdditionFade = EditorGUILayout.IntField(new GUIContent("Addition Value: ", "Default = 10"), m_perlinNoise.AdditionFade);
-            EditorGUILayout.Space();
+            //GUILayout.Label("Fade Change", m_header3Style);
+            //m_perlinNoise.MultiplyFade = EditorGUILayout.IntField(new GUIContent("Multiply Value: ", "Default = 6"), m_perlinNoise.MultiplyFade);
+            //m_perlinNoise.MinusFade = EditorGUILayout.IntField(new GUIContent("Minus Value: ", "Default = 15"), m_perlinNoise.MinusFade);
+            //m_perlinNoise.AdditionFade = EditorGUILayout.IntField(new GUIContent("Addition Value: ", "Default = 10"), m_perlinNoise.AdditionFade);
+            //EditorGUILayout.Space();
 
             // Terrain Z
-            GUILayout.Label("Terrain Z Value", m_header3Style);
-            m_perlinNoise.MinZValue = EditorGUILayout.FloatField("Minimum: ", m_perlinNoise.MinZValue);
-            m_perlinNoise.MaxZValue = EditorGUILayout.FloatField("Maximum: ", m_perlinNoise.MaxZValue);
+            //GUILayout.Label("Terrain Z Value", m_header3Style);
+            //m_perlinNoise.MinZValue = EditorGUILayout.FloatField("Minimum: ", m_perlinNoise.MinZValue);
+            //m_perlinNoise.MaxZValue = EditorGUILayout.FloatField("Maximum: ", m_perlinNoise.MaxZValue);
+            //EditorGUILayout.Space();
+
+            m_perlinNoise.DistanceModifier = EditorGUILayout.Slider(new GUIContent("Distance: ", "Distance between each point used"), m_perlinNoise.DistanceModifier, 0, 262);
             EditorGUILayout.Space();
         }
 

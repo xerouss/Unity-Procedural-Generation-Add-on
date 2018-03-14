@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   27/02/2018
+//	Last Edited On:	   14/03/2018
 //	File:			   Perlin Noise Old.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -18,12 +18,13 @@ namespace ProceduralGenerationAddOn
 {
     public class PerlinNoiseOld
     {
+        #region old stuff
         #region Constants
         const float startY = 1;
 
         #endregion
 
-
+        /*
         // TODO: Add more customisation for the user
         PNGridNode[,] m_grid;
         TerrainData m_terrainData;
@@ -127,23 +128,8 @@ namespace ProceduralGenerationAddOn
 
             // Return the scalar value from the dot product
             return Vector3.Dot(gradient, direction);
-        }
-
-        /// <summary>
-        /// Get the terrain in the scene, if there isn't spawn one
-        /// </summary>
-        public void SetTerrain()
-        {
-            // If there is no current terrain
-            if (Terrain.activeTerrain == null)
-            {
-                // Create the terrain data with the default data
-                //m_terrainData = new TerrainData();
-                Terrain.CreateTerrainGameObject(m_terrainData);
-            }
-            else Terrain.activeTerrain.terrainData = m_terrainData;
-        }
-
+        }        
+        
         /// <summary>
         /// Normalise the inputted values
         /// </summary>
@@ -158,29 +144,262 @@ namespace ProceduralGenerationAddOn
             return Mathf.InverseLerp(min, max, value);
            // return (value - (min * value)) / ((max * value) - (min * value));
         }
+        */
+        #endregion
 
+        #region Constants
+        const float defaultTerrainXSize = 50;
+        const float defaultTerrainYSize = 50;
+        const float defaultTerrainZSize = 50;
+        const int defaultHeightmapRes = 32;
+        const int defaultMultiplyFade = 6;
+        const int defaultMinusFade = 15;
+        const int defaultAdditionFade = 10;
+        const float defaultDistanceModifier = 40;
+        const int arrayX = 0;
+        const int arrayY = 1;
+
+        const float normaliseMin = 0;
+        const float normaliseMax = 1;
+        const int fadeLeftPow = 5;
+        const int fadeMidPow = 4;
+        const int fadeRightPow = 3;
+
+        const int terrainRes = 1024;
+        const int terrainResPerBatch = 8;
+        #endregion
+
+        #region Variables
+
+        PNGridNode[,] m_permutation;
+        TerrainData m_terrainData;
+
+        // Variables the user can change
+        Vector3 m_terrainSize = new Vector3(defaultTerrainXSize, defaultTerrainYSize, defaultTerrainZSize);
+        int m_heightmapResolution = defaultHeightmapRes;
+        int m_multiplyFade = defaultMultiplyFade;
+        int m_minusFade = defaultMinusFade;
+        int m_additionFade = defaultAdditionFade;
+        float m_distanceModifier = defaultDistanceModifier;
+
+        #endregion
+
+        #region Properties
+        // Can't set the terrain size and the heightmap res in the
+        // Property because it will randomly delete the level heightmap
+
+        public Vector3 TerrainSize
+        {
+            get
+            {
+                return m_terrainSize;
+            }
+
+            set
+            {
+                m_terrainSize = value;
+            }
+        }
+
+        public int HeightmapResolution
+        {
+            get
+            {
+                return m_heightmapResolution;
+            }
+
+            set
+            {
+                m_heightmapResolution = value;
+            }
+        }
+
+        public int MultiplyFade
+        {
+            get
+            {
+                return m_multiplyFade;
+            }
+
+            set
+            {
+                m_multiplyFade = value;
+            }
+        }
+
+        public int MinusFade
+        {
+            get
+            {
+                return m_minusFade;
+            }
+
+            set
+            {
+                m_minusFade = value;
+            }
+        }
+
+        public int AdditionFade
+        {
+            get
+            {
+                return m_additionFade;
+            }
+
+            set
+            {
+                m_additionFade = value;
+            }
+        }
+
+        public float DistanceModifier
+        {
+            get
+            {
+                return m_distanceModifier;
+            }
+
+            set
+            {
+                m_distanceModifier = value;
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="permutationSize">The size of the permutation grid</param>
+        public PerlinNoiseOld(int permutationSize)
+        {
+            m_terrainData = new TerrainData();
+            m_terrainData.SetDetailResolution(terrainRes, terrainResPerBatch);
+            m_terrainData.baseMapResolution = terrainRes;
+
+            m_permutation = new PNGridNode[permutationSize, permutationSize];
+
+        }
+
+        /// <summary>
+        /// Calculate the height value of the location using Perlin Noise
+        /// </summary>
+        /// <param name="x">X location</param>
+        /// <param name="y">Y location</param>
+        /// <returns>Height</returns>
+        public float perlin(float x, float y)
+        {
+            // Floor/ceil for grid positions
+            // + 1 the values then floor them to round up
+            int ceilX = Mathf.FloorToInt(x + 1);
+            int ceilY = Mathf.FloorToInt(y + 1);
+            int floorX = Mathf.FloorToInt(x);
+            int floorY = Mathf.FloorToInt(y);
+
+            // Each corner of the cube that the position is int
+            Vector2 topLeft = new Vector2(floorX, ceilY);
+            Vector2 topRight = new Vector2(ceilX, ceilY);
+            Vector2 botLeft = new Vector2(floorX, floorY);
+            Vector2 botRight = new Vector2(ceilX, floorY);
+
+            // Get the distance from the position to each corner
+            Vector2 pos = new Vector2(x, y);
+            Vector2 distanceTopLeft = pos - topLeft;
+            Vector2 distanceTopRight = pos - topRight;
+            Vector2 distanceBotLeft = pos - botLeft;
+            Vector2 distanceBotRight = pos - botRight;
+
+            // The dot product of each distance and gradient
+            float dotTopLeft = Vector2.Dot(m_permutation[floorX, ceilY].Gradient, distanceTopLeft);
+            float dotTopRight = Vector2.Dot(m_permutation[ceilX, ceilY].Gradient, distanceTopRight);
+            float dotBotLeft = Vector2.Dot(m_permutation[floorX, floorY].Gradient, distanceBotLeft);
+            float dotBotRight = Vector2.Dot(m_permutation[ceilX, floorY].Gradient, distanceBotRight);
+
+            // Lerp between the points to get a gradual gradient
+            float leftSideLerp = Mathf.Lerp(dotTopLeft, dotBotLeft, y);
+            float rightSideLerp = Mathf.Lerp(dotTopRight, dotBotRight, y);
+            float lerpTotal = Mathf.Lerp(leftSideLerp, rightSideLerp, x);
+
+            // Return the normalised value of the lerps
+            return Mathf.InverseLerp(normaliseMin, normaliseMax, lerpTotal);
+        }
+
+
+        public float Fade(float value)
+        {
+            return (Mathf.Pow(m_multiplyFade * value, fadeLeftPow) - (Mathf.Pow(m_minusFade * value, fadeMidPow)) + (Mathf.Pow(m_additionFade * value, fadeRightPow)));
+        }
+
+        /// <summary>
+        /// Set the gradients for the permutation
+        /// </summary>
+        public void SetGridGradients()
+        {
+            Vector3 gradient;
+
+            for (int x = 0; x < m_permutation.GetLength(arrayX); x++)
+            {
+                for (int y = 0; y < m_permutation.GetLength(arrayY); y++)
+                {
+                    // Create the nodes for the grid position so the gradient can be set
+                    m_permutation[x, y] = new PNGridNode();
+
+                    // Set the gradient on every axis to either 0 or 1
+                    // The random ranges has 2 as the max since it does not include that value
+                    gradient = new Vector3(Random.Range(0, 2),
+                        Random.Range(0, 2), 0);
+
+                    m_permutation[x, y].Gradient = gradient;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get the terrain in the scene, if there isn't spawn one
+        /// </summary>
+        public void CreateTerrain()
+        {
+            // If there is no current terrain
+            if (Terrain.activeTerrain == null)
+            {
+                // Create the terrain data with the default data
+                Terrain.CreateTerrainGameObject(m_terrainData);
+            }
+            else Terrain.activeTerrain.terrainData = m_terrainData;
+        }
 
         /// <summary>
         /// Create the terrain with Perlin Noise
         /// </summary>
-        public void CreateTerrain()
+        public void SetTerrainData()
         {
+            // Set the heightmap res and terrain size here or else it won't change
+            // Can't do it in the property because it will randomly delete the level heightmap
+            m_terrainData.heightmapResolution = m_heightmapResolution;
+            m_terrainData.size = m_terrainSize;
+
+            SetGridGradients();
+
             // Get the width and height of the terrain's height map
             int maxX = m_terrainData.heightmapWidth;
             int maxY = m_terrainData.heightmapHeight;
 
             // Array to store the heights
             float[,] heights = new float[maxX, maxY];
+            float xLocation = 0;
+            float yLocation = 0;
 
             // Go through the height map
             for (int x = 0; x < maxX; x++)
             {
                 for (int y = 0; y < maxY; y++)
                 {
+                    xLocation = ((float)x / maxX) * m_distanceModifier;
+                    yLocation = ((float)y / maxY) * m_distanceModifier;
+
                     // Get the height values using the perlin noise
-                    float heightTest = CalculateHeight(new Vector3(x, y), 0, maxX, maxY);
-                    float height = NormaliseFloat(heightTest, 0.0f, m_maxHeight);
-                    heights[x, y] = height;
+                    heights[x, y] = perlin(xLocation, yLocation) / 10;
                 }
             }
 
@@ -188,7 +407,7 @@ namespace ProceduralGenerationAddOn
             m_terrainData.SetHeights(0, 0, heights);
 
             // Create the terrain with the new height map
-            SetTerrain();
+            CreateTerrain();
         }
     }
 }
