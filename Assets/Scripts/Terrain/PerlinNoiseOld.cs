@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   14/03/2018
+//	Last Edited On:	   15/03/2018
 //	File:			   Perlin Noise Old.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -16,6 +16,7 @@ using UnityEngine;
 /// </summary>
 namespace ProceduralGenerationAddOn
 {
+    [System.Runtime.InteropServices.Guid("3EDB446B-AD4C-4928-A562-328ECBD6CFD0")]
     public class PerlinNoiseOld
     {
         #region old stuff
@@ -167,6 +168,12 @@ namespace ProceduralGenerationAddOn
 
         const int terrainRes = 1024;
         const int terrainResPerBatch = 8;
+
+        const float octavesDefault = 1;
+        const float frequencDefault = 1;
+        const float amplitudeDefault = 0.5f;
+        const float amplitudeGainDefault = 0.5f;
+        const float lacunarityDefault = 2;
         #endregion
 
         #region Variables
@@ -180,7 +187,14 @@ namespace ProceduralGenerationAddOn
         int m_multiplyFade = defaultMultiplyFade;
         int m_minusFade = defaultMinusFade;
         int m_additionFade = defaultAdditionFade;
-        float m_distanceModifier = defaultDistanceModifier;
+        float m_tileAmount = defaultDistanceModifier;
+
+        // Fractal Brownian Motion variables
+        float m_octaves =   octavesDefault;             // Amount of times it iterates
+        float m_frequency = frequencDefault;            // How much the bumps are spread out
+        float m_amplitude = amplitudeDefault;           // How flat it is
+        float m_amplitudeGain = amplitudeGainDefault;    // How much the amplitude increases after each iteration
+        float m_lacunarity = lacunarityDefault;         // How much the frequency is increased after each iteration
 
         #endregion
 
@@ -253,16 +267,81 @@ namespace ProceduralGenerationAddOn
             }
         }
 
-        public float DistanceModifier
+        public float TileAmount
         {
             get
             {
-                return m_distanceModifier;
+                return m_tileAmount;
             }
 
             set
             {
-                m_distanceModifier = value;
+                m_tileAmount = value;
+            }
+        }
+
+        public float Octaves
+        {
+            get
+            {
+                return m_octaves;
+            }
+
+            set
+            {
+                m_octaves = value;
+            }
+        }
+
+        public float Frequency
+        {
+            get
+            {
+                return m_frequency;
+            }
+
+            set
+            {
+                m_frequency = value;
+            }
+        }
+
+        public float Amplitude
+        {
+            get
+            {
+                return m_amplitude;
+            }
+
+            set
+            {
+                m_amplitude = value;
+            }
+        }
+
+        public float AmplitudeGain
+        {
+            get
+            {
+                return m_amplitudeGain;
+            }
+
+            set
+            {
+                m_amplitudeGain = value;
+            }
+        }
+
+        public float Lacunarity
+        {
+            get
+            {
+                return m_lacunarity;
+            }
+
+            set
+            {
+                m_lacunarity = value;
             }
         }
 
@@ -322,13 +401,76 @@ namespace ProceduralGenerationAddOn
             float lerpTotal = Mathf.Lerp(leftSideLerp, rightSideLerp, x);
 
             // Return the normalised value of the lerps
-            return Mathf.InverseLerp(normaliseMin, normaliseMax, lerpTotal);
+            return NormaliseFloat(normaliseMin, normaliseMax, lerpTotal);
+        }
+        
+        /// <summary>
+        /// Normalise float between two values
+        /// </summary>
+        /// <param name="min">Minimum it can be</param>
+        /// <param name="max">Maximum it can be</param>
+        /// <param name="value">The value to normalise</param>
+        /// <returns>Normalised value</returns>
+        public float NormaliseFloat(float min, float max, float value)
+        {
+            return Mathf.InverseLerp(min, max, value);
         }
 
-
+        /// <summary>
+        /// Fade the value to smooth the height
+        /// </summary>
+        /// <param name="value">Value to fade</param>
+        /// <returns>Faded value</returns>
         public float Fade(float value)
         {
             return (Mathf.Pow(m_multiplyFade * value, fadeLeftPow) - (Mathf.Pow(m_minusFade * value, fadeMidPow)) + (Mathf.Pow(m_additionFade * value, fadeRightPow)));
+        }
+
+        /// <summary>
+        /// Fractal Brownian Motion to be applied on the perlin for better results
+        /// </summary>
+        /// <param name="x">X Position</param>
+        /// <param name="y">Y Position</param>
+        /// <returns>Height</returns>
+        public float Fractal(float x, float y)
+        {
+            float height = 0;
+            float frequency = Frequency;
+            float amplitude = Amplitude;
+
+            for (int i = 0; i < Octaves; i++)
+            {
+                // Make sure the position it looped to prevent out of bound errors
+                x = LoopPos(x * frequency, m_terrainData.heightmapWidth);
+                y = LoopPos(y * frequency, m_terrainData.heightmapHeight);
+
+                height = perlin(x, y) * amplitude;
+
+                // Change the values for the next octave
+                frequency *= Lacunarity;
+                amplitude *= AmplitudeGain;
+            }
+
+            //height = NormaliseFloat(normaliseMin, normaliseMax, height);
+
+            return height;
+        }
+
+        /// <summary>
+        /// Make sure the position loops back to the start of the terrain
+        /// </summary>
+        /// <param name="value">Position Value</param>
+        /// <param name="max">Max it can be</param>
+        /// <returns>Position</returns>
+        public float LoopPos(float value, int max)
+        {
+            if(value >= max)
+            {
+                // Reduce the max from it so it goes back to the start
+                value = value % max;
+            }
+
+            return value;
         }
 
         /// <summary>
@@ -345,10 +487,10 @@ namespace ProceduralGenerationAddOn
                     // Create the nodes for the grid position so the gradient can be set
                     m_permutation[x, y] = new PNGridNode();
 
-                    // Set the gradient on every axis to either 0 or 1
+                    // Set the gradient on every axis to either -1 or 1
                     // The random ranges has 2 as the max since it does not include that value
-                    gradient = new Vector3(Random.Range(0, 2),
-                        Random.Range(0, 2), 0);
+                    gradient = new Vector3(Random.Range(-1, 2),
+                        Random.Range(-1, 2), 0);
 
                     m_permutation[x, y].Gradient = gradient;
                 }
@@ -395,11 +537,12 @@ namespace ProceduralGenerationAddOn
             {
                 for (int y = 0; y < maxY; y++)
                 {
-                    xLocation = ((float)x / maxX) * m_distanceModifier;
-                    yLocation = ((float)y / maxY) * m_distanceModifier;
+                    // Make sure the height map doesn't follow the grid 1 for 1
+                    xLocation = ((float)x / maxX) * m_tileAmount;
+                    yLocation = ((float)y / maxY) * m_tileAmount;
 
                     // Get the height values using the perlin noise
-                    heights[x, y] = perlin(xLocation, yLocation) / 10;
+                    heights[x, y] = Fractal(xLocation, yLocation);
                 }
             }
 

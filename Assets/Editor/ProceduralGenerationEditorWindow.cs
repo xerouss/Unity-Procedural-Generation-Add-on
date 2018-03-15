@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   08/03/2018
+//	Last Edited On:	   15/03/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -172,7 +172,16 @@ namespace ProceduralGenerationAddOn
             //m_perlinNoise.MaxZValue = EditorGUILayout.FloatField("Maximum: ", m_perlinNoise.MaxZValue);
             //EditorGUILayout.Space();
 
-            m_perlinNoise.DistanceModifier = EditorGUILayout.Slider(new GUIContent("Distance: ", "Distance between each point used"), m_perlinNoise.DistanceModifier, 0, 262);
+            m_perlinNoise.TileAmount = EditorGUILayout.Slider(new GUIContent("Tile Amount: ", "How many tile amounts should be on the terrain. Less = less detail"), m_perlinNoise.TileAmount, 0, 262);
+            EditorGUILayout.Space();
+
+            // Fractal
+            GUILayout.Label("Fractal Brownian Motion", m_header3Style);
+            m_perlinNoise.Octaves = EditorGUILayout.FloatField(new GUIContent("Octaves: ", "Amount of times it iterates. More = more detail"), m_perlinNoise.Octaves);
+            m_perlinNoise.Frequency = EditorGUILayout.FloatField(new GUIContent("Frequency: ", "How much the bumps are spread out. Lower = flatter"), m_perlinNoise.Frequency);
+            m_perlinNoise.Amplitude = EditorGUILayout.FloatField(new GUIContent("Amplitude: ", "How flat/tall it is"), m_perlinNoise.Amplitude);
+            m_perlinNoise.AmplitudeGain = EditorGUILayout.FloatField(new GUIContent("AmplitudeGain: ", "How much the amplitude increases after each iteration"), m_perlinNoise.AmplitudeGain);
+            m_perlinNoise.Lacunarity = EditorGUILayout.FloatField(new GUIContent("Lacunarity: ", "How much the frequency is increased after each iteration"), m_perlinNoise.Lacunarity);
             EditorGUILayout.Space();
         }
 
