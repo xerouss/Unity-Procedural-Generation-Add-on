@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   08/03/2018
+//	Last Edited On:	   22/03/2018
 //	File:			   PerlinNoise.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -243,11 +243,11 @@ namespace ProceduralGenerationAddOn
         {
             // If the perlin noise is done again
             // Modular it so it is in the correct square
-            if(RepeatAmount > 0)
+            if(m_repeatAmount > 0)
             {
-                x = x % RepeatAmount;
-                y = y % RepeatAmount;
-                z = z % RepeatAmount;
+                x = x % m_repeatAmount;
+                y = y % m_repeatAmount;
+                z = z % m_repeatAmount;
             }
 
             // The position in the cube
@@ -290,17 +290,22 @@ namespace ProceduralGenerationAddOn
             float x1, x2, y1, y2;
 
             // Front square
-            x1 = Mathf.Lerp(gradientAAA, gradientBAA, fadeX);
-            x2 = Mathf.Lerp(gradientABA, gradientBBA, fadeX);
-            y1 = Mathf.Lerp(x1, x2, fadeY);
+            x1 = Lerp(gradientAAA, gradientBAA, fadeX);
+            x2 = Lerp(gradientABA, gradientBBA, fadeX);
+            y1 = Lerp(x1, x2, fadeY);
 
             // Back square
-            x1 = Mathf.Lerp(gradientAAB, gradientBAB, fadeX);
-            x2 = Mathf.Lerp(gradientABB, gradientBBB, fadeX);
-            y2 = Mathf.Lerp(x1, x2, fadeY);
+            x1 = Lerp(gradientAAB, gradientBAB, fadeX);
+            x2 = Lerp(gradientABB, gradientBBB, fadeX);
+            y2 = Lerp(x1, x2, fadeY);
 
             // All
             return NormalisePerlinFloat(Mathf.Lerp(y1, y2, fadeZ));
+        }
+
+        public static float Lerp(float a, float b, float x)
+        {
+            return a + x * (b - a);
         }
 
         /// <summary>
@@ -396,7 +401,7 @@ namespace ProceduralGenerationAddOn
         /// <summary>
         /// Get the terrain in the scene, if there isn't spawn one
         /// </summary>
-        public void SetTerrain()
+        public void CreateTerrain()
         {
             // If there is no current terrain
             if (Terrain.activeTerrain == null)
@@ -410,7 +415,7 @@ namespace ProceduralGenerationAddOn
         /// <summary>
         /// Create the terrain with Perlin Noise
         /// </summary>
-        public void CreateTerrain()
+        public void SetTerrainData()
         {
             // Set the heightmap res and terrain size here or else it won't change
             // Can't do it in the property because it will randomly delete the level heightmap
@@ -423,14 +428,19 @@ namespace ProceduralGenerationAddOn
 
             // Array to store the heights
             float[,] heights = new float[maxX, maxY];
+            float xLocation = 0;
+            float yLocation = 0;
 
             // Go through the height map
             for (int x = 0; x < maxX; x++)
             {
                 for (int y = 0; y < maxY; y++)
                 {
+                    xLocation = ((float)x / maxX) * 6;
+                    yLocation = ((float)y / maxY) * 6;
+
                     // Z had to be a random amount or else it does not work
-                    heights[x, y] = Perlin((float)x, (float)y, Random.Range(MinZValue, MaxZValue));
+                    heights[x, y] = Perlin(xLocation, yLocation, xLocation + yLocation); //Random.Range(MinZValue, MaxZValue));
                 }
             }
 
@@ -438,7 +448,7 @@ namespace ProceduralGenerationAddOn
             m_terrainData.SetHeights(base0, base0, heights);
 
             // Create the terrain with the new height map
-            SetTerrain();
+            CreateTerrain();
         }
         #endregion
     }

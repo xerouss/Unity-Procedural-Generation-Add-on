@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   15/03/2018
+//	Last Edited On:	   22/03/2018
 //	File:			   Perlin Noise Old.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -16,7 +16,6 @@ using UnityEngine;
 /// </summary>
 namespace ProceduralGenerationAddOn
 {
-    [System.Runtime.InteropServices.Guid("3EDB446B-AD4C-4928-A562-328ECBD6CFD0")]
     public class PerlinNoiseOld
     {
         #region old stuff
@@ -150,17 +149,17 @@ namespace ProceduralGenerationAddOn
 
         #region Constants
         const float defaultTerrainXSize = 50;
-        const float defaultTerrainYSize = 50;
+        const float defaultTerrainYSize = 5;
         const float defaultTerrainZSize = 50;
         const int defaultHeightmapRes = 32;
         const int defaultMultiplyFade = 6;
         const int defaultMinusFade = 15;
         const int defaultAdditionFade = 10;
-        const float defaultDistanceModifier = 40;
+        const float defaultDistanceModifier = 6;
         const int arrayX = 0;
         const int arrayY = 1;
 
-        const float normaliseMin = 0;
+        const float normaliseMin = -1;
         const float normaliseMax = 1;
         const int fadeLeftPow = 5;
         const int fadeMidPow = 4;
@@ -196,6 +195,7 @@ namespace ProceduralGenerationAddOn
         float m_amplitudeGain = amplitudeGainDefault;    // How much the amplitude increases after each iteration
         float m_lacunarity = lacunarityDefault;         // How much the frequency is increased after each iteration
 
+        float m_seed = 0;
         #endregion
 
         #region Properties
@@ -359,6 +359,8 @@ namespace ProceduralGenerationAddOn
 
             m_permutation = new PNGridNode[permutationSize, permutationSize];
 
+            SetGridGradients();
+
         }
 
         /// <summary>
@@ -395,25 +397,33 @@ namespace ProceduralGenerationAddOn
             float dotBotLeft = Vector2.Dot(m_permutation[floorX, floorY].Gradient, distanceBotLeft);
             float dotBotRight = Vector2.Dot(m_permutation[ceilX, floorY].Gradient, distanceBotRight);
 
+            // Get the fade value to use in the lerp
+            // X/Y is reduced from the floor to make it between 0 and 1
+            float fadeX = Fade(x - floorX);
+            float fadeY = Fade(y - floorY);
+
             // Lerp between the points to get a gradual gradient
-            float leftSideLerp = Mathf.Lerp(dotTopLeft, dotBotLeft, y);
-            float rightSideLerp = Mathf.Lerp(dotTopRight, dotBotRight, y);
-            float lerpTotal = Mathf.Lerp(leftSideLerp, rightSideLerp, x);
+            float topSideLerp = Mathf.Lerp(dotTopLeft, dotTopRight, fadeX);
+            float botSideLerp = Mathf.Lerp(dotBotLeft, dotBotRight, fadeX);
+            float lerpTotal = Mathf.Lerp(topSideLerp, botSideLerp, fadeY);
+
+            // Normalise height since the height map only takes values between 0 and 1s
+            float normalisedHeight = NormaliseFloat(normaliseMin, normaliseMax, lerpTotal);
 
             // Return the normalised value of the lerps
-            return NormaliseFloat(normaliseMin, normaliseMax, lerpTotal);
+            return normalisedHeight;
         }
-        
+
         /// <summary>
         /// Normalise float between two values
         /// </summary>
-        /// <param name="min">Minimum it can be</param>
-        /// <param name="max">Maximum it can be</param>
+        /// <param name="min">Minimum the value can be</param>
+        /// <param name="max">Maximum the value can be</param>
         /// <param name="value">The value to normalise</param>
         /// <returns>Normalised value</returns>
         public float NormaliseFloat(float min, float max, float value)
         {
-            return Mathf.InverseLerp(min, max, value);
+            return (value + 1) / 2; //(value - min) / (max - min);
         }
 
         /// <summary>
@@ -423,7 +433,8 @@ namespace ProceduralGenerationAddOn
         /// <returns>Faded value</returns>
         public float Fade(float value)
         {
-            return (Mathf.Pow(m_multiplyFade * value, fadeLeftPow) - (Mathf.Pow(m_minusFade * value, fadeMidPow)) + (Mathf.Pow(m_additionFade * value, fadeRightPow)));
+            return value * value * value * (value * (value * 6f - 15f) + 10f);
+            //return (Mathf.Pow(m_multiplyFade * value, fadeLeftPow) - (Mathf.Pow(m_minusFade * value, fadeMidPow)) + (Mathf.Pow(m_additionFade * value, fadeRightPow)));
         }
 
         /// <summary>
@@ -440,18 +451,16 @@ namespace ProceduralGenerationAddOn
 
             for (int i = 0; i < Octaves; i++)
             {
-                // Make sure the position it looped to prevent out of bound errors
+                // Make sure the position it looped tos prevent out of bound errors
                 x = LoopPos(x * frequency, m_terrainData.heightmapWidth);
                 y = LoopPos(y * frequency, m_terrainData.heightmapHeight);
 
-                height = perlin(x, y) * amplitude;
+                height = perlin(x, y * amplitude;
 
                 // Change the values for the next octave
                 frequency *= Lacunarity;
                 amplitude *= AmplitudeGain;
             }
-
-            //height = NormaliseFloat(normaliseMin, normaliseMax, height);
 
             return height;
         }
@@ -478,8 +487,17 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public void SetGridGradients()
         {
-            Vector3 gradient;
+            // All the gradients that can be used for 2D perlin noise
+            Vector3[] avaliableGradients = { new Vector2( 1f, 0f),
+                                             new Vector2(-1f, 0f),
+                                             new Vector2( 0f, 1f),
+                                             new Vector2( 0f,-1f),
+                                             new Vector2( 1f, 1f).normalized,
+                                             new Vector2(-1f, 1f).normalized,
+                                             new Vector2( 1f,-1f).normalized,
+                                             new Vector2(-1f,-1f).normalized };
 
+            // Loop through the permutation grid and assign a random gradient
             for (int x = 0; x < m_permutation.GetLength(arrayX); x++)
             {
                 for (int y = 0; y < m_permutation.GetLength(arrayY); y++)
@@ -487,12 +505,8 @@ namespace ProceduralGenerationAddOn
                     // Create the nodes for the grid position so the gradient can be set
                     m_permutation[x, y] = new PNGridNode();
 
-                    // Set the gradient on every axis to either -1 or 1
-                    // The random ranges has 2 as the max since it does not include that value
-                    gradient = new Vector3(Random.Range(-1, 2),
-                        Random.Range(-1, 2), 0);
-
-                    m_permutation[x, y].Gradient = gradient;
+                    // Randomly select one of the gradients
+                    m_permutation[x, y].Gradient = avaliableGradients[Random.Range(0, avaliableGradients.Length)];
                 }
             }
         }
@@ -521,7 +535,7 @@ namespace ProceduralGenerationAddOn
             m_terrainData.heightmapResolution = m_heightmapResolution;
             m_terrainData.size = m_terrainSize;
 
-            SetGridGradients();
+            //SetGridGradients();
 
             // Get the width and height of the terrain's height map
             int maxX = m_terrainData.heightmapWidth;
@@ -533,9 +547,9 @@ namespace ProceduralGenerationAddOn
             float yLocation = 0;
 
             // Go through the height map
-            for (int x = 0; x < maxX; x++)
+            for (int y = 0; y < maxY; y++)
             {
-                for (int y = 0; y < maxY; y++)
+                for (int x = 0; x < maxX; x++)
                 {
                     // Make sure the height map doesn't follow the grid 1 for 1
                     xLocation = ((float)x / maxX) * m_tileAmount;
