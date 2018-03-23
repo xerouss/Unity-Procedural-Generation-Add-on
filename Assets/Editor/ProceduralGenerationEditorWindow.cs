@@ -38,7 +38,7 @@ namespace ProceduralGenerationAddOn
 
         int m_levelType = 0;
         string[] m_levelTypeOptions = { "Terrain", "Dungeon" };
-        static PerlinNoise m_perlinNoise;
+        static PerlinNoiseOld m_perlinNoise;
 
         #region Style Variables
         static GUIStyle m_header1Style;
@@ -67,7 +67,7 @@ namespace ProceduralGenerationAddOn
             CreateStyles();
 
             // Create the perlin noise so it can be used
-            m_perlinNoise = new PerlinNoise(); //PerlinNoiseOld(256 * 2);
+            m_perlinNoise = new PerlinNoiseOld(256 * 2);
         }
 
         /// <summary>
@@ -160,34 +160,34 @@ namespace ProceduralGenerationAddOn
             m_perlinNoise.HeightmapResolution = EditorGUILayout.IntField(new GUIContent("Heightmap Resolution: ", "Default = 32"), m_perlinNoise.HeightmapResolution);
             EditorGUILayout.Space();
 
-            // Repeat
-            m_perlinNoise.RepeatAmount = EditorGUILayout.IntField("Repeat Amount: ", m_perlinNoise.RepeatAmount);
-            EditorGUILayout.Space();
-
-            // Fade Change
-            GUILayout.Label("Fade Change", m_header3Style);
-            m_perlinNoise.MultiplyFade = EditorGUILayout.IntField(new GUIContent("Multiply Value: ", "Default = 6"), m_perlinNoise.MultiplyFade);
-            m_perlinNoise.MinusFade = EditorGUILayout.IntField(new GUIContent("Minus Value: ", "Default = 15"), m_perlinNoise.MinusFade);
-            m_perlinNoise.AdditionFade = EditorGUILayout.IntField(new GUIContent("Addition Value: ", "Default = 10"), m_perlinNoise.AdditionFade);
-            EditorGUILayout.Space();
-
-            // Terrain Z
-            GUILayout.Label("Terrain Z Value", m_header3Style);
-            m_perlinNoise.MinZValue = EditorGUILayout.FloatField("Minimum: ", m_perlinNoise.MinZValue);
-            m_perlinNoise.MaxZValue = EditorGUILayout.FloatField("Maximum: ", m_perlinNoise.MaxZValue);
-            EditorGUILayout.Space();
-
-            //m_perlinNoise.TileAmount = EditorGUILayout.Slider(new GUIContent("Tile Amount: ", "How many tile amounts should be on the terrain. Less = less detail"), m_perlinNoise.TileAmount, 0, 262);
+            //// Repeat
+            //m_perlinNoise.RepeatAmount = EditorGUILayout.IntField("Repeat Amount: ", m_perlinNoise.RepeatAmount);
             //EditorGUILayout.Space();
 
-            //// Fractal
-            //GUILayout.Label("Fractal Brownian Motion", m_header3Style);
-            //m_perlinNoise.Octaves = EditorGUILayout.FloatField(new GUIContent("Octaves: ", "Amount of times it iterates. More = more detail"), m_perlinNoise.Octaves);
-            //m_perlinNoise.Frequency = EditorGUILayout.FloatField(new GUIContent("Frequency: ", "How much the bumps are spread out. Lower = flatter"), m_perlinNoise.Frequency);
-            //m_perlinNoise.Amplitude = EditorGUILayout.FloatField(new GUIContent("Amplitude: ", "How flat/tall it is"), m_perlinNoise.Amplitude);
-            //m_perlinNoise.AmplitudeGain = EditorGUILayout.FloatField(new GUIContent("AmplitudeGain: ", "How much the amplitude increases after each iteration"), m_perlinNoise.AmplitudeGain);
-            //m_perlinNoise.Lacunarity = EditorGUILayout.FloatField(new GUIContent("Lacunarity: ", "How much the frequency is increased after each iteration"), m_perlinNoise.Lacunarity);
+            //// Fade Change
+            //GUILayout.Label("Fade Change", m_header3Style);
+            //m_perlinNoise.MultiplyFade = EditorGUILayout.IntField(new GUIContent("Multiply Value: ", "Default = 6"), m_perlinNoise.MultiplyFade);
+            //m_perlinNoise.MinusFade = EditorGUILayout.IntField(new GUIContent("Minus Value: ", "Default = 15"), m_perlinNoise.MinusFade);
+            //m_perlinNoise.AdditionFade = EditorGUILayout.IntField(new GUIContent("Addition Value: ", "Default = 10"), m_perlinNoise.AdditionFade);
             //EditorGUILayout.Space();
+
+            //// Terrain Z
+            //GUILayout.Label("Terrain Z Value", m_header3Style);
+            //m_perlinNoise.MinZValue = EditorGUILayout.FloatField("Minimum: ", m_perlinNoise.MinZValue);
+            //m_perlinNoise.MaxZValue = EditorGUILayout.FloatField("Maximum: ", m_perlinNoise.MaxZValue);
+            //EditorGUILayout.Space();
+
+            m_perlinNoise.TileAmount = EditorGUILayout.Slider(new GUIContent("Tile Amount: ", "How many tile amounts should be on the terrain. Less = less detail"), m_perlinNoise.TileAmount, 0, 262);
+            EditorGUILayout.Space();
+
+            // Fractal
+            GUILayout.Label("Fractal Brownian Motion", m_header3Style);
+            m_perlinNoise.Octaves = EditorGUILayout.FloatField(new GUIContent("Octaves: ", "Amount of times it iterates. More = more detail"), m_perlinNoise.Octaves);
+            m_perlinNoise.Frequency = EditorGUILayout.FloatField(new GUIContent("Frequency: ", "How much the bumps are spread out. Lower = flatter"), m_perlinNoise.Frequency);
+            m_perlinNoise.Amplitude = EditorGUILayout.FloatField(new GUIContent("Amplitude: ", "How flat/tall it is"), m_perlinNoise.Amplitude);
+            m_perlinNoise.AmplitudeGain = EditorGUILayout.FloatField(new GUIContent("AmplitudeGain: ", "How much the amplitude increases after each iteration"), m_perlinNoise.AmplitudeGain);
+            m_perlinNoise.Lacunarity = EditorGUILayout.FloatField(new GUIContent("Lacunarity: ", "How much the frequency is increased after each iteration"), m_perlinNoise.Lacunarity);
+            EditorGUILayout.Space();
         }
 
         /// <summary>
