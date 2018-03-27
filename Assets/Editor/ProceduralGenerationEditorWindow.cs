@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   15/03/2018
+//	Last Edited On:	   27/03/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -28,6 +28,8 @@ namespace ProceduralGenerationAddOn
         const int header3TextSize = 12;
         const int minWindowSize = 480;
         const int dropdownSpaceHeight = 15;
+        const int heightmapResLowerBound = 0;
+        const int heightmapResHigherBound = 256;
         #endregion
 
         #region Private
@@ -157,7 +159,8 @@ namespace ProceduralGenerationAddOn
             EditorGUILayout.Space();
 
             // Heightmap Resolution
-            m_perlinNoise.HeightmapResolution = EditorGUILayout.IntField(new GUIContent("Heightmap Resolution: ", "Default = 32"), m_perlinNoise.HeightmapResolution);
+            m_perlinNoise.HeightmapResolution = EditorGUILayout.IntSlider(new GUIContent("Heightmap Resolution: ", "Default = 32"), 
+                m_perlinNoise.HeightmapResolution, heightmapResLowerBound, heightmapResHigherBound);
             EditorGUILayout.Space();
 
             //// Repeat

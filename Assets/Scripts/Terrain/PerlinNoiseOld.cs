@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   23/03/2018
+//	Last Edited On:	   27/03/2018
 //	File:			   Perlin Noise Old.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -52,11 +52,23 @@ namespace ProceduralGenerationAddOn
                                              new Vector2(-1f, 0f),
                                              new Vector2( 0f, 1f),
                                              new Vector2( 0f,-1f),
-                                             new Vector2( 1f, 1f).normalized,
-                                             new Vector2(-1f, 1f).normalized,
-                                             new Vector2( 1f,-1f).normalized,
-                                             new Vector2(-1f,-1f).normalized };
+                                             new Vector2( 1f, 1f),
+                                             new Vector2(-1f, 1f),
+                                             new Vector2( 1f,-1f),
+                                             new Vector2(-1f,-1f) };
         int[] hash = { 151,160,137,91,90,15,
+            131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
+            190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
+            88,237,149,56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,27,166,
+            77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,244,
+            102,143,54,65,25,63,161,1,216,80,73,209,76,132,187,208,89,18,169,200,196,
+            135,130,116,188,159,86,164,100,109,198,173,186,3,64,52,217,226,250,124,123,
+            5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,28,42,
+            223,183,170,213,119,248,152,2,44,154,163,70,221,153,101,155,167,43,172,9,
+            129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,104,218,246,97,228,
+            251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,
+            49,192,214,31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,
+            138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156, 151,160,137,91,90,15,
             131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
             190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
             88,237,149,56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,27,166,
@@ -281,38 +293,23 @@ namespace ProceduralGenerationAddOn
             int gridY = floorY & 255;
             int gridZ = floorZ & 255;
 
-            /*
-            // Each corner of the cube that the position is int
-            Vector3 forwardTopLeft =    new Vector3(floorX, ceilY, floorZ);
-            Vector3 forwardTopRight =   new Vector3(ceilX, ceilY, floorZ);
-            Vector3 forwardBotLeft =    new Vector3(floorX, floorY, floorZ);
-            Vector3 forwardBotRight =   new Vector3(ceilX, floorY, floorZ);
-            Vector3 backTopLeft =       new Vector3(floorX, ceilY, ceilZ);
-            Vector3 backTopRight =      new Vector3(ceilX, ceilY, ceilZ);
-            Vector3 backBotLeft =       new Vector3(floorX, floorY, ceilZ);
-            Vector3 backBotRight =      new Vector3(ceilX, floorY, ceilZ);
+            int aaa = GetHashValue(gridX,       gridY,      gridZ);             // Bot left front
+            int aba = GetHashValue(gridX,       gridY + 1,  gridZ);             // Top left front
+            int aab = GetHashValue(gridX,       gridY,      gridZ + 1);  // Bot left back
+            int abb = GetHashValue(gridX,       gridY + 1,  gridZ + 1);  // Top left back
+            int baa = GetHashValue(gridX + 1,   gridY,      gridZ);             // Bot right front
+            int bba = GetHashValue(gridX + 1,   gridY + 1,  gridZ);             // Top right front
+            int bab = GetHashValue(gridX + 1,   gridY,      gridZ + 1);  // Bot right back
+            int bbb = GetHashValue(gridX + 1,   gridY + 1,  gridZ + 1);  // Top right back
 
-            // Get the distance from the position to each corner
-            Vector3 pos = new Vector3(x, y, z);
-            Vector3 distanceForwardTopLeft =    pos - forwardTopLeft;
-            Vector3 distanceForwardTopRight =   pos - forwardTopRight;
-            Vector3 distanceForwardBotLeft =    pos - forwardBotLeft;
-            Vector3 distanceForwardBotRight =   pos - forwardBotRight;
-            Vector3 distanceBackTopLeft =       pos - backTopLeft;
-            Vector3 distanceBackTopRight =      pos - backTopRight;
-            Vector3 distanceBackBotLeft =       pos - backBotLeft;
-            Vector3 distanceBackBotRight =      pos - backBotRight;
-            
-
-            // The dot product of each distance and gradient
-            float dotForwardTopLeft =   Vector3.Dot(m_permutation[floorX, ceilY, floorZ].Gradient, distanceForwardTopLeft);
-            float dotForwardTopRight =  Vector3.Dot(m_permutation[ceilX, ceilY, floorZ].Gradient, distanceForwardTopRight);
-            float dotForwardBotLeft =   Vector3.Dot(m_permutation[floorX, floorY, floorZ].Gradient, distanceForwardBotLeft);
-            float dotForwardBotRight =  Vector3.Dot(m_permutation[ceilX, floorY, floorZ].Gradient, distanceForwardBotRight);
-            float dotBackTopLeft =      Vector3.Dot(m_permutation[floorX, ceilY, ceilZ].Gradient, distanceBackTopLeft);
-            float dotBackTopRight =     Vector3.Dot(m_permutation[ceilX, ceilY, ceilZ].Gradient, distanceBackTopRight);
-            float dotBackBotLeft =      Vector3.Dot(m_permutation[floorX, floorY, ceilZ].Gradient, distanceBackBotLeft);
-            float dotBackBotRight =     Vector3.Dot(m_permutation[ceilX, floorY, ceilZ].Gradient, distanceBackBotRight);
+            float gradientAAA = Gradient(aaa, posX,     posY,       posZ);
+            float gradientABA = Gradient(aba, posX,     posY - 1,   posZ);
+            float gradientAAB = Gradient(aab, posX,     posY,       posZ - 1);
+            float gradientABB = Gradient(abb, posX,     posY - 1,   posZ - 1);
+            float gradientBAA = Gradient(baa, posX - 1, posY,       posZ);
+            float gradientBBA = Gradient(bba, posX - 1, posY - 1,   posZ);
+            float gradientBAB = Gradient(bab, posX - 1, posY,       posZ - 1);
+            float gradientBBB = Gradient(bbb, posX - 1, posY - 1,   posZ - 1);
 
             // Get the fade value to use in the lerp
             // X/Y is reduced from the floor to make it between 0 and 1
@@ -322,13 +319,13 @@ namespace ProceduralGenerationAddOn
 
             // Lerp between the points to get a gradual gradient
             // Front
-            float topForwardSideLerp = Mathf.Lerp(dotForwardTopLeft, dotForwardTopRight, fadeX);
-            float botForwardSideLerp = Mathf.Lerp(dotForwardBotLeft, dotForwardBotRight, fadeX);
+            float topForwardSideLerp = Mathf.Lerp(gradientAAA, gradientBAA, fadeX);
+            float botForwardSideLerp = Mathf.Lerp(gradientABA, gradientBBA, fadeX);
             float forwardLerpTotal = Mathf.Lerp(topForwardSideLerp, botForwardSideLerp, fadeY);
 
             // Back
-            float topBackSideLerp = Mathf.Lerp(dotBackTopLeft, dotBackTopRight, fadeX);
-            float botBackSideLerp = Mathf.Lerp(dotBackBotLeft, dotBackBotRight, fadeX);
+            float topBackSideLerp = Mathf.Lerp(gradientAAB, gradientBAB, fadeX);
+            float botBackSideLerp = Mathf.Lerp(gradientABB, gradientBBB, fadeX);
             float backLerpTotal = Mathf.Lerp(topBackSideLerp, botBackSideLerp, fadeY);
 
 
@@ -339,6 +336,71 @@ namespace ProceduralGenerationAddOn
 
             // Return the normalised value of the lerps
             return normalisedHeight;
+        }
+
+        /// <summary>
+        /// Get the hash value of the location
+        /// </summary>
+        /// <param name="x">X pos</param>
+        /// <param name="y">Y Pos</param>
+        /// <param name="z">Z Pos</param>
+        /// <returns>Hash value</returns>
+        int GetHashValue(int x, int y, int z)
+        {
+            return hash[hash[hash[x] + y] + z];
+        }
+
+        /// <summary>
+        /// Get the gradient of the position
+        /// </summary>
+        /// <param name="hash">The hash of the corner</param>
+        /// <param name="x">X Position</param>
+        /// <param name="y">Y Position</param>
+        /// <param name="z">Z Position</param>
+        /// <returns>Gradient</returns>
+        public float Gradient(int hash, float x, float y, float z)
+        {
+            const int bitwiseInvert = 0xF;
+            const int hex0 = 0x0;
+            const int hex1 = 0x1;
+            const int hex2 = 0x2;
+            const int hex3 = 0x3;
+            const int hex4 = 0x4;
+            const int hex5 = 0x5;
+            const int hex6 = 0x6;
+            const int hex7 = 0x7;
+            const int hex8 = 0x8;
+            const int hex9 = 0x9;
+            const int hex10 = 0xA;
+            const int hex11 = 0xB;
+            const int hex12 = 0xC;
+            const int hex13 = 0xD;
+            const int hex14 = 0xE;
+            const int hex15 = 0xF;
+
+            // This is used instead of Ken Perlin's way of doing it
+            // Because this is meant to be faster and easier to read
+
+            switch (hash & bitwiseInvert)
+            {
+                case hex0: return x + y;
+                case hex1: return -x + y;
+                case hex2: return x - y;
+                case hex3: return -x - y;
+                case hex4: return x + z;
+                case hex5: return -x + z;
+                case hex6: return x - z;
+                case hex7: return -x - z;
+                case hex8: return y + z;
+                case hex9: return -y + z;
+                case hex10: return y - z;
+                case hex11: return -y - z;
+                case hex12: return y + x;
+                case hex13: return -y + z;
+                case hex14: return y - x;
+                case hex15: return -y - z;
+                default: return 0;
+            }
         }
 
         /// <summary>
@@ -465,12 +527,10 @@ namespace ProceduralGenerationAddOn
             CreateTerrain();
         }
         #endregion
-
-        */
-        // 2D
-       
-
-        #region 2D
+    */
+        
+        // 2D with permutation
+        #region 2D with permutation
         #region Variables
 
         PNGridNode[,] m_gradients;
@@ -490,6 +550,9 @@ namespace ProceduralGenerationAddOn
         float m_amplitude = amplitudeDefault;           // How flat it is
         float m_amplitudeGain = amplitudeGainDefault;    // How much the amplitude increases after each iteration
         float m_lacunarity = lacunarityDefault;         // How much the frequency is increased after each iteration
+
+        float highestValue = 0;
+        float lowestValue = 0;
 
         float m_seed = 0;
         #endregion
@@ -676,7 +739,7 @@ namespace ProceduralGenerationAddOn
 
 
             int hashLeft = hash[floorX & hashMask];
-            int hashRight = hash[hashLeft + 1];
+            int hashRight = hash[(floorX & hashMask) + 1];
             int hashBot = floorY & hashMask;
             int hashTop = hashBot + 1;
 
@@ -693,11 +756,16 @@ namespace ProceduralGenerationAddOn
             Vector2 distanceBotLeft = pos - botLeft;
             Vector2 distanceBotRight = pos - botRight;
 
+            int gradientBotLeft = hash[hashLeft + hashBot] & gradientMask;
+            int gradientBotRight = hash[hashRight + hashBot] & gradientMask;
+            int gradientTopLeft = hash[hashLeft + hashTop] & gradientMask;
+            int gradientTopRight = hash[hashRight + hashTop] & gradientMask;
+
             // The dot product of each distance and gradient
-            float dotTopLeft = Vector2.Dot(avaliableGradients[hash[hashLeft + hashBot] & gradientMask], distanceTopLeft);
-            float dotTopRight = Vector2.Dot(avaliableGradients[hash[hashRight + hashBot] & gradientMask], distanceTopRight);
-            float dotBotLeft = Vector2.Dot(avaliableGradients[hash[hashLeft + hashTop] & gradientMask], distanceBotLeft);
-            float dotBotRight = Vector2.Dot(avaliableGradients[hash[hashRight + hashTop] & gradientMask], distanceBotRight);
+            float dotTopLeft = Vector2.Dot(avaliableGradients[gradientBotLeft], distanceBotLeft);
+            float dotTopRight = Vector2.Dot(avaliableGradients[gradientBotRight], distanceBotRight);
+            float dotBotLeft = Vector2.Dot(avaliableGradients[gradientTopLeft], distanceTopLeft);
+            float dotBotRight = Vector2.Dot(avaliableGradients[gradientTopRight], distanceTopRight);
 
             // Get the fade value to use in the lerp
             // X/Y is reduced from the floor to make it between 0 and 1
@@ -710,7 +778,10 @@ namespace ProceduralGenerationAddOn
             float lerpTotal = Mathf.Lerp(topSideLerp, botSideLerp, fadeY);
 
             // Normalise height since the height map only takes values between 0 and 1s
-            float normalisedHeight = lerpTotal * Mathf.Sqrt(2);
+            float normalisedHeight = NormaliseFloat(0, 1, lerpTotal);
+
+            if (normalisedHeight < lowestValue) lowestValue = normalisedHeight;
+            if (normalisedHeight > highestValue) highestValue = normalisedHeight;
 
             // Return the normalised value of the lerps
             return normalisedHeight;
@@ -869,6 +940,8 @@ namespace ProceduralGenerationAddOn
             CreateTerrain();
         }
 #endregion
+
+        // 2D my version
     
     }
 }
