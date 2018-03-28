@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   27/03/2018
+//	Last Edited On:	   28/03/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -40,7 +40,7 @@ namespace ProceduralGenerationAddOn
 
         int m_levelType = 0;
         string[] m_levelTypeOptions = { "Terrain", "Dungeon" };
-        static PerlinNoiseOld m_perlinNoise;
+        static PerlinNoise m_perlinNoise;
 
         #region Style Variables
         static GUIStyle m_header1Style;
@@ -69,7 +69,7 @@ namespace ProceduralGenerationAddOn
             CreateStyles();
 
             // Create the perlin noise so it can be used
-            m_perlinNoise = new PerlinNoiseOld(256 * 2);
+            m_perlinNoise = new PerlinNoise(256 * 2);
         }
 
         /// <summary>
@@ -163,24 +163,11 @@ namespace ProceduralGenerationAddOn
                 m_perlinNoise.HeightmapResolution, heightmapResLowerBound, heightmapResHigherBound);
             EditorGUILayout.Space();
 
-            //// Repeat
-            //m_perlinNoise.RepeatAmount = EditorGUILayout.IntField("Repeat Amount: ", m_perlinNoise.RepeatAmount);
-            //EditorGUILayout.Space();
-
             //// Fade Change
-            //GUILayout.Label("Fade Change", m_header3Style);
-            //m_perlinNoise.MultiplyFade = EditorGUILayout.IntField(new GUIContent("Multiply Value: ", "Default = 6"), m_perlinNoise.MultiplyFade);
-            //m_perlinNoise.MinusFade = EditorGUILayout.IntField(new GUIContent("Minus Value: ", "Default = 15"), m_perlinNoise.MinusFade);
-            //m_perlinNoise.AdditionFade = EditorGUILayout.IntField(new GUIContent("Addition Value: ", "Default = 10"), m_perlinNoise.AdditionFade);
-            //EditorGUILayout.Space();
-
-            //// Terrain Z
-            //GUILayout.Label("Terrain Z Value", m_header3Style);
-            //m_perlinNoise.MinZValue = EditorGUILayout.FloatField("Minimum: ", m_perlinNoise.MinZValue);
-            //m_perlinNoise.MaxZValue = EditorGUILayout.FloatField("Maximum: ", m_perlinNoise.MaxZValue);
-            //EditorGUILayout.Space();
-
-            m_perlinNoise.TileAmount = EditorGUILayout.Slider(new GUIContent("Tile Amount: ", "How many tile amounts should be on the terrain. Less = less detail"), m_perlinNoise.TileAmount, 0, 262);
+            GUILayout.Label("Fade Change", m_header3Style);
+            m_perlinNoise.MultiplyFade = EditorGUILayout.IntField(new GUIContent("Multiply Value: ", "Default = 6"), m_perlinNoise.MultiplyFade);
+            m_perlinNoise.MinusFade = EditorGUILayout.IntField(new GUIContent("Minus Value: ", "Default = 15"), m_perlinNoise.MinusFade);
+            m_perlinNoise.AdditionFade = EditorGUILayout.IntField(new GUIContent("Addition Value: ", "Default = 10"), m_perlinNoise.AdditionFade);
             EditorGUILayout.Space();
 
             // Fractal

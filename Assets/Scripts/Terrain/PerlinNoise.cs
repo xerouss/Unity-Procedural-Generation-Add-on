@@ -1,18 +1,9 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   22/03/2018
+//	Last Edited On:	   28/03/2018
 //	File:			   PerlinNoise.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
-
-/*
-These resources were used to implement the Perlin Noise
-http://micsymposium.org/mics_2011_proceedings/mics2011_submission_30.pdf
-http://flafla2.github.io/2014/08/09/perlinnoise.html
-http://mrl.nyu.edu/~perlin/noise/
-http://mrl.nyu.edu/~perlin/paper445.pdf
-
-*/
 
 ////////////////////////////////////////////
 // Libraries and namespaces
@@ -21,82 +12,109 @@ using UnityEngine;
 ////////////////////////////////////////////
 
 /// <summary>
-/// This class will be used to create levels using Perlin Noise
+/// Original Class when first implementing Perlin Noise
 /// </summary>
 namespace ProceduralGenerationAddOn
 {
     public class PerlinNoise
     {
         #region Constants
-        const float defaultTerrainXSize = 10;
-        const float defaultTerrainYSize = 1;
-        const float defaultTerrainZSize = 10;
-        const int defaultHeightmapRes = 32;
+        // Defaults
+        const float defaultTerrainXSize = 50;
+        const float defaultTerrainYSize = 10;
+        const float defaultTerrainZSize = 50;
+        const int defaultHeightmapRes = 128;
         const int defaultMultiplyFade = 6;
         const int defaultMinusFade = 15;
         const int defaultAdditionFade = 10;
-        const int defaultRepeatAmount = 0;
-        const int defaultMinZ = 0;
-        const int defaultMaxZ = 1000;
 
-        const int permutationLength = 256;
-        const int permutationLengthBase0 = 255;
-        const int overFlowPermutaitonIncrease = 2;
-        const int makeBase0 = 1;
-        const int bitwiseInvert = 0xF;
-        const int hex0 = 0x0;
-        const int hex1 = 0x1;
-        const int hex2 = 0x2;
-        const int hex3 = 0x3;
-        const int hex4 = 0x4;
-        const int hex5 = 0x5;
-        const int hex6 = 0x6;
-        const int hex7 = 0x7;
-        const int hex8 = 0x8;
-        const int hex9 = 0x9;
-        const int hex10 = 0xA;
-        const int hex11 = 0xB;
-        const int hex12 = 0xC;
-        const int hex13 = 0xD;
-        const int hex14 = 0xE;
-        const int hex15 = 0xF;
-        const int base0 = 0;
-        const int makeMaxValue1 = 2;
+        // FBM defaults
+        const float octavesDefault = 1;
+        const float frequencyDefault = 6;
+        const float amplitudeDefault = 1;
+        const float amplitudeGainDefault = 0.5f;
+        const float lacunarityDefault = 2;
+
+        // Normalise
+        const float normaliseMin = -1;
+        const float normaliseMax = 1;
+
+        // Terrain Settings
+        const int terrainRes = 1024;
+        const int terrainResPerBatch = 8;
+        const int heightMapBaseX = 0;
+        const int heightMapBaseY = 0;
+
+        // Bit masks to prevent overflow of the array
+        const int hashMask = 511;
+        const int gradientMask = 7;
+
+        // The positions of the points in the cube
+        readonly Vector2 topLeft = new Vector2(0, 1);
+        readonly Vector2 topRight = new Vector2(1, 1);
+        readonly Vector2 botLeft = new Vector2(0, 0);
+        readonly Vector2 botRight = new Vector2(1, 0);
+
+        // 8 different gradients the points on the cube can be
+        readonly Vector2[] avaliableGradients = { new Vector2( 1f, 0f),
+                                                  new Vector2(-1f, 0f),
+                                                  new Vector2( 0f, 1f),
+                                                  new Vector2( 0f,-1f),
+                                                  new Vector2( 1f, 1f),
+                                                  new Vector2(-1f, 1f),
+                                                  new Vector2( 1f,-1f),
+                                                  new Vector2(-1f,-1f) };
+
+        // Hash has 256 values but is repeated to prevent overflow of the array
+        // The total size if 512
+        // The larger size also allows bigger values for the octaves and tile amount
+        readonly int[] hash = { 151,160,137,91,90,15,
+            131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
+            190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
+            88,237,149,56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,27,166,
+            77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,244,
+            102,143,54,65,25,63,161,1,216,80,73,209,76,132,187,208,89,18,169,200,196,
+            135,130,116,188,159,86,164,100,109,198,173,186,3,64,52,217,226,250,124,123,
+            5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,28,42,
+            223,183,170,213,119,248,152,2,44,154,163,70,221,153,101,155,167,43,172,9,
+            129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,104,218,246,97,228,
+            251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,
+            49,192,214,31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,
+            138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,151,160,137,91,90,15,
+            131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
+            190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
+            88,237,149,56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,27,166,
+            77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,244,
+            102,143,54,65,25,63,161,1,216,80,73,209,76,132,187,208,89,18,169,200,196,
+            135,130,116,188,159,86,164,100,109,198,173,186,3,64,52,217,226,250,124,123,
+            5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,28,42,
+            223,183,170,213,119,248,152,2,44,154,163,70,221,153,101,155,167,43,172,9,
+            129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,104,218,246,97,228,
+            251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,
+            49,192,214,31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,
+            138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180};
         #endregion
 
         #region Variables
-        // The permutation table which is stated by Ken Perlin
-        // It is a hash table that has random number from 0-255 placed within
-        readonly int[] m_permutation = { 151,160,137,91,90,15,
-            131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
-            190, 6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
-            88,237,149,56,87,174,20,125,136,171,168, 68,175,74,165,71,134,139,48,27,166,
-            77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,244,
-            102,143,54, 65,25,63,161, 1,216,80,73,209,76,132,187,208, 89,18,169,200,196,
-            135,130,116,188,159,86,164,100,109,198,173,186, 3,64,52,217,226,250,124,123,
-            5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,28,42,
-            223,183,170,213,119,248,152, 2,44,154,163, 70,221,153,101,155,167, 43,172,9,
-            129,22,39,253, 19,98,108,110,79,113,224,232,178,185, 112,104,218,246,97,228,
-            251,34,242,193,238,210,144,12,191,179,162,241, 81,51,145,235,249,14,239,107,
-            49,192,214, 31,181,199,106,157,184, 84,204,176,115,121,50,45,127, 4,150,254,
-            138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180};
 
-        // Will determine gradients
-        // The permutation table which will be used
-        // Is the overflow permutation for the values that are needed one above the max in the permutation
-        int[] m_overPerm;
+        // The terrain data used when creating the terrain
         TerrainData m_terrainData;
 
+        // Variables the user can change
         Vector3 m_terrainSize = new Vector3(defaultTerrainXSize, defaultTerrainYSize, defaultTerrainZSize);
         int m_heightmapResolution = defaultHeightmapRes;
         int m_multiplyFade = defaultMultiplyFade;
         int m_minusFade = defaultMinusFade;
         int m_additionFade = defaultAdditionFade;
-        int m_repeatAmount = defaultRepeatAmount;
-        float m_minZValue = defaultMinZ;
-        float m_maxZValue = defaultMaxZ;
 
+        // Fractal Brownian Motion variables
+        float m_octaves = octavesDefault;             // Amount of times it iterates
+        float m_frequency = frequencyDefault;            // How much the bumps are spread out
+        float m_amplitude = amplitudeDefault;           // How flat it is
+        float m_amplitudeGain = amplitudeGainDefault;    // How much the amplitude increases after each iteration
+        float m_lacunarity = lacunarityDefault;         // How much the frequency is increased after each iteration
 
+        float m_seed = 0;
         #endregion
 
         #region Properties
@@ -168,235 +186,204 @@ namespace ProceduralGenerationAddOn
             }
         }
 
-        public int RepeatAmount
+        public float Octaves
         {
             get
             {
-                return m_repeatAmount;
+                return m_octaves;
             }
 
             set
             {
-                m_repeatAmount = value;
+                m_octaves = value;
             }
         }
 
-        public float MinZValue
+        public float Frequency
         {
             get
             {
-                return m_minZValue;
+                return m_frequency;
             }
 
             set
             {
-                m_minZValue = value;
+                m_frequency = value;
             }
         }
 
-        public float MaxZValue
+        public float Amplitude
         {
             get
             {
-                return m_maxZValue;
+                return m_amplitude;
             }
 
             set
             {
-                m_maxZValue = value;
+                m_amplitude = value;
             }
         }
 
+        public float AmplitudeGain
+        {
+            get
+            {
+                return m_amplitudeGain;
+            }
+
+            set
+            {
+                m_amplitudeGain = value;
+            }
+        }
+
+        public float Lacunarity
+        {
+            get
+            {
+                return m_lacunarity;
+            }
+
+            set
+            {
+                m_lacunarity = value;
+            }
+        }
 
         #endregion
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public PerlinNoise()
+        /// <param name="permutationSize">The size of the permutation grid</param>
+        public PerlinNoise(int permutationSize)
         {
-            // Double the length of the original permutation table so overlapping does give an error
-            // E.g. doing the permutation length base 0 final location would case an error since it has no location to get gradients from
-            m_overPerm = new int[permutationLength * overFlowPermutaitonIncrease];
-
-            // Fill it with value from the permutation table
-            for (int i = 0; i < permutationLength; i++)
-            {
-                m_overPerm[i] = m_permutation[i % permutationLength];
-            }
-
-            // Create the terrain data to output the perlin to
             m_terrainData = new TerrainData();
+            m_terrainData.SetDetailResolution(terrainRes, terrainResPerBatch);
+            m_terrainData.baseMapResolution = terrainRes;
         }
 
-        // All functions used in the Perlin Noise
-        #region Perlin Noise functions
-
         /// <summary>
-        /// Create the perlin noise
+        /// Calculate the height value of the location using Perlin Noise
         /// </summary>
         /// <param name="x">X location</param>
         /// <param name="y">Y location</param>
-        /// <param name="z">Z location</param>
         /// <returns>Height</returns>
-        public float Perlin(float x, float y, float z)
+        public float Perlin(float x, float y)
         {
-            // If the perlin noise is done again
-            // Modular it so it is in the correct square
-            if(m_repeatAmount > 0)
-            {
-                x = x % m_repeatAmount;
-                y = y % m_repeatAmount;
-                z = z % m_repeatAmount;
-            }
+            // Floor/ceil for grid positions
+            // + 1 the values then floor them to round up            
+            int floorX = Mathf.FloorToInt(x);
+            int floorY = Mathf.FloorToInt(y);
 
-            // The position in the cube
-            float posX = x - (int)x;
-            float posY = y - (int)y;
-            float posZ = z - (int)z;
+            int hashLeft = hash[floorX & hashMask];
+            int hashRight = hash[(floorX & hashMask) + 1];
+            int hashBot = floorY & hashMask;
+            int hashTop = hashBot + 1;
 
-            // Calculate the fade amount for the position
-            // This is used in the lerp
-            float fadeX = Fade(posX);
-            float fadeY = Fade(posY);
-            float fadeZ = Fade(posZ);
+            // Get the distance from the position to each corner
+            Vector2 pos = new Vector2(x - floorX, y - floorY);
+            Vector2 distanceTopLeft = pos - topLeft;
+            Vector2 distanceTopRight = pos - topRight;
+            Vector2 distanceBotLeft = pos - botLeft;
+            Vector2 distanceBotRight = pos - botRight;
 
-            // Find what cube the location is in
-            int cubeX = (int)x & permutationLengthBase0;
-            int cubeY = (int)y & permutationLengthBase0;
-            int cubeZ = (int)z & permutationLengthBase0;
+            int gradientBotLeft = hash[hashLeft + hashBot] & gradientMask;
+            int gradientBotRight = hash[hashRight + hashBot] & gradientMask;
+            int gradientTopLeft = hash[hashLeft + hashTop] & gradientMask;
+            int gradientTopRight = hash[hashRight + hashTop] & gradientMask;
 
-            // Get the hash values for each of the cube corners
-            int aaa = GetHashValue(cubeX,               cubeY,              cubeZ);             // Bot left front
-            int aba = GetHashValue(cubeX,               Increment(cubeY),   cubeZ);             // Top left front
-            int aab = GetHashValue(cubeX,               cubeY,              Increment(cubeZ));  // Bot left back
-            int abb = GetHashValue(cubeX,               Increment(cubeY),   Increment(cubeZ));  // Top left back
-            int baa = GetHashValue(Increment(cubeX),    cubeY,              cubeZ);             // Bot right front
-            int bba = GetHashValue(Increment(cubeX),    Increment(cubeY),   cubeZ);             // Top right front
-            int bab = GetHashValue(Increment(cubeX),    cubeY,              Increment(cubeZ));  // Bot right back
-            int bbb = GetHashValue(Increment(cubeX),    Increment(cubeY),   Increment(cubeZ));  // Top right back
+            // The dot product of each distance and gradient
+            float dotTopLeft = Vector2.Dot(avaliableGradients[gradientBotLeft], distanceBotLeft);
+            float dotTopRight = Vector2.Dot(avaliableGradients[gradientBotRight], distanceBotRight);
+            float dotBotLeft = Vector2.Dot(avaliableGradients[gradientTopLeft], distanceTopLeft);
+            float dotBotRight = Vector2.Dot(avaliableGradients[gradientTopRight], distanceTopRight);
 
-            // Get the dot product of the gradient vector and the distance to the corner from the position
-            float gradientAAA = Gradient(aaa, posX,     posY,       posZ);
-            float gradientABA = Gradient(aba, posX,     posY - 1,   posZ);
-            float gradientAAB = Gradient(aab, posX,     posY,       posZ - 1);
-            float gradientABB = Gradient(abb, posX,     posY - 1,   posZ - 1);
-            float gradientBAA = Gradient(baa, posX - 1, posY,       posZ);
-            float gradientBBA = Gradient(bba, posX - 1, posY - 1,   posZ);
-            float gradientBAB = Gradient(bab, posX - 1, posY,       posZ - 1);
-            float gradientBBB = Gradient(bbb, posX - 1, posY - 1,   posZ - 1);
+            // Get the fade value to use in the lerp
+            // X/Y is reduced from the floor to make it between 0 and 1
+            float fadeX = Fade(pos.x);
+            float fadeY = Fade(pos.y);
 
-            // Linear interpolation of the points
-            float x1, x2, y1, y2;
+            // Lerp between the points to get a gradual gradient
+            float topSideLerp = Mathf.Lerp(dotTopLeft, dotTopRight, fadeX);
+            float botSideLerp = Mathf.Lerp(dotBotLeft, dotBotRight, fadeX);
+            float lerpTotal = Mathf.Lerp(topSideLerp, botSideLerp, fadeY);
 
-            // Front square
-            x1 = Lerp(gradientAAA, gradientBAA, fadeX);
-            x2 = Lerp(gradientABA, gradientBBA, fadeX);
-            y1 = Lerp(x1, x2, fadeY);
+            // Normalise height since the height map only takes values between 0 and 1s
+            float normalisedHeight = NormaliseFloat(normaliseMin, normaliseMax, lerpTotal);
 
-            // Back square
-            x1 = Lerp(gradientAAB, gradientBAB, fadeX);
-            x2 = Lerp(gradientABB, gradientBBB, fadeX);
-            y2 = Lerp(x1, x2, fadeY);
-
-            // All
-            return NormalisePerlinFloat(Mathf.Lerp(y1, y2, fadeZ));
-        }
-
-        public static float Lerp(float a, float b, float x)
-        {
-            return a + x * (b - a);
+            // Return the normalised value of the lerps
+            return normalisedHeight;
         }
 
         /// <summary>
-        /// Make the value between 0 and 1
+        /// Normalise float between two values
         /// </summary>
+        /// <param name="min">Minimum the value can be</param>
+        /// <param name="max">Maximum the value can be</param>
         /// <param name="value">The value to normalise</param>
-        /// <returns>The value between 0 and 1</returns>
-        float NormalisePerlinFloat(float value)
+        /// <returns>Normalised value</returns>
+        public float NormaliseFloat(float min, float max, float value)
         {
-            // The value should be between -1 and 1
-            // This should change it to between 0 and 1
-            return (value + makeBase0) / makeMaxValue1;
+            return (value - min) / (max - min);
         }
 
         /// <summary>
-        /// Get the hash value of the location
+        /// Fade the value to smooth the height
         /// </summary>
-        /// <param name="x">X pos</param>
-        /// <param name="y">Y Pos</param>
-        /// <param name="z">Z Pos</param>
-        /// <returns>Hash value</returns>
-        int GetHashValue(int x, int y, int z)
-        {
-            return m_overPerm[m_overPerm[m_overPerm[x] + y] + z];
-        }
-
-        /// <summary>
-        /// Fade the inputed value
-        /// </summary>
-        /// <param name="value">The value to fade</param>
-        /// <returns>The value faded</returns>
+        /// <param name="value">Value to fade</param>
+        /// <returns>Faded value</returns>
         public float Fade(float value)
         {
-            // This formula was from Ken Perlin's implementation
-            return value * value * value * (value * (value * MultiplyFade - MinusFade) + AdditionFade);
+            // Original Equation: 6t^5-15t^4+10t^3
+            return value * value * value * (value * (value * m_multiplyFade - m_minusFade) + m_additionFade);
         }
 
         /// <summary>
-        /// Increment hash function
+        /// Fractal Brownian Motion to be applied on the perlin for better results
         /// </summary>
-        /// <param name="num">Number to increment</param>
-        /// <returns>Incremented value</returns>
-        public int Increment(int num)
-        {
-            num++;
-
-            // Makes sure the number still repeats in the permutation
-            if (RepeatAmount > 0) num %= RepeatAmount;
-
-            return num;
-        }
-
-        /// <summary>
-        /// Get the gradient of the position
-        /// </summary>
-        /// <param name="hash">The hash of the corner</param>
         /// <param name="x">X Position</param>
         /// <param name="y">Y Position</param>
-        /// <param name="z">Z Position</param>
-        /// <returns>Gradient</returns>
-        public float Gradient(int hash, float x, float y, float z)
+        /// <returns>Height</returns>
+        public float Fractal(float x, float y)
         {
-            // This is used instead of Ken Perlin's way of doing it
-            // Because this is meant to be faster and easier to read
+            float height = 0;
+            float frequency = Frequency;
+            float amplitude = Amplitude;
 
-            switch (hash & bitwiseInvert)
+            for (int i = 0; i < Octaves; i++)
             {
-                case hex0: return x + y;
-                case hex1: return -x + y;
-                case hex2: return x - y;
-                case hex3: return -x - y;
-                case hex4: return x + z;
-                case hex5: return -x + z;
-                case hex6: return x - z;
-                case hex7: return -x - z;
-                case hex8: return y + z;
-                case hex9: return -y + z;
-                case hex10: return y - z;
-                case hex11: return -y - z;
-                case hex12: return y + x;
-                case hex13: return -y + z;
-                case hex14: return y - x;
-                case hex15: return -y - z;
-                default: return 0;
+                // Make sure the position it looped tos prevent out of bound errors
+                x = LoopPos(x * frequency, m_terrainData.heightmapWidth);
+                y = LoopPos(y * frequency, m_terrainData.heightmapHeight);
+
+                height = Perlin(x, y) * amplitude;
+
+                // Change the values for the next octave
+                frequency *= Lacunarity;
+                amplitude *= AmplitudeGain;
             }
+
+            return height;
         }
 
-        #endregion
+        /// <summary>
+        /// Make sure the position loops back to the start of the terrain
+        /// </summary>
+        /// <param name="value">Position Value</param>
+        /// <param name="max">Max it can be</param>
+        /// <returns>Position</returns>
+        public float LoopPos(float value, int max)
+        {
+            if (value >= max)
+            {
+                // Reduce the max from it so it goes back to the start
+                value = value % max;
+            }
 
-        // All functions which change the terrain
-        #region Terrain Functions
+            return value;
+        }
 
         /// <summary>
         /// Get the terrain in the scene, if there isn't spawn one
@@ -436,20 +423,20 @@ namespace ProceduralGenerationAddOn
             {
                 for (int y = 0; y < maxY; y++)
                 {
-                    xLocation = ((float)x / maxX) * 6;
-                    yLocation = ((float)y / maxY) * 6;
+                    // Make sure the height map doesn't follow the grid 1 for 1
+                    xLocation = ((float)x / maxX);
+                    yLocation = ((float)y / maxY);
 
-                    // Z had to be a random amount or else it does not work
-                    heights[x, y] = Perlin(xLocation, yLocation, xLocation + yLocation); //Random.Range(MinZValue, MaxZValue));
+                    // Get the height values using the perlin noise
+                    heights[x, y] = Fractal(xLocation, yLocation);
                 }
             }
 
             // Set the height map to the terrain data
-            m_terrainData.SetHeights(base0, base0, heights);
+            m_terrainData.SetHeights(heightMapBaseX, heightMapBaseY, heights);
 
             // Create the terrain with the new height map
             CreateTerrain();
         }
-        #endregion
     }
 }
