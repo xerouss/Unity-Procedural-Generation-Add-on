@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   28/03/2018
+//	Last Edited On:	   29/03/2018
 //	File:			   PerlinNoise.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -23,6 +23,8 @@ namespace ProceduralGenerationAddOn
         const float defaultTerrainXSize = 50;
         const float defaultTerrainYSize = 10;
         const float defaultTerrainZSize = 50;
+        const int defaultXOffset = 0;
+        const int defaultYOffset = 0;
         const int defaultHeightmapRes = 128;
         const int defaultMultiplyFade = 6;
         const int defaultMinusFade = 15;
@@ -102,6 +104,7 @@ namespace ProceduralGenerationAddOn
 
         // Variables the user can change
         Vector3 m_terrainSize = new Vector3(defaultTerrainXSize, defaultTerrainYSize, defaultTerrainZSize);
+        Vector2 m_posOffset = new Vector2(defaultXOffset, defaultYOffset);
         int m_heightmapResolution = defaultHeightmapRes;
         int m_multiplyFade = defaultMultiplyFade;
         int m_minusFade = defaultMinusFade;
@@ -251,7 +254,26 @@ namespace ProceduralGenerationAddOn
             }
         }
 
+        public Vector2 PosOffset
+        {
+            get
+            {
+                return m_posOffset;
+            }
+
+            set
+            {
+                // Make sure the offset doesn't go less than 0 since it produces an error
+                if (value.x < 0) value.x = 0;
+                if (value.y < 0) value.y = 0;
+
+                m_posOffset = value;
+            }
+        }
+
         #endregion
+
+        #region Perlin Noise Functions
 
         /// <summary>
         /// Constructor
@@ -272,36 +294,53 @@ namespace ProceduralGenerationAddOn
         /// <returns>Height</returns>
         public float Perlin(float x, float y)
         {
-            // Floor/ceil for grid positions
-            // + 1 the values then floor them to round up            
+            // Get the lower bound of the square  
             int floorX = Mathf.FloorToInt(x);
             int floorY = Mathf.FloorToInt(y);
 
-            int hashLeft = hash[floorX & hashMask];
-            int hashRight = hash[(floorX & hashMask) + 1];
+            // Get the hash values of the x axis of the square
+            // Use the hash mask to prevent overflow
+            // +1 to get the right side since the square is 1 in length
+
+            //////////////////////////////////////////////
+            // TODO WHY DO WE HASH THESE BUT NOT THE Y VALUES??
+            //////////////////////////////////////////////
+            int hashLeft = floorX & hashMask;
+            int hashRight = hash[hashLeft + 1];
+            hashLeft = hash[hashLeft];
+
+            // Get the hash indexes of the y axis
+            // Use the hash mask to prevent overflow
+            // +1 to get the top side since the square is 1 in height
             int hashBot = floorY & hashMask;
             int hashTop = hashBot + 1;
 
             // Get the distance from the position to each corner
+            // Convert the position into the cube location so each axis is between 0 and 1
             Vector2 pos = new Vector2(x - floorX, y - floorY);
             Vector2 distanceTopLeft = pos - topLeft;
             Vector2 distanceTopRight = pos - topRight;
             Vector2 distanceBotLeft = pos - botLeft;
             Vector2 distanceBotRight = pos - botRight;
 
-            int gradientBotLeft = hash[hashLeft + hashBot] & gradientMask;
-            int gradientBotRight = hash[hashRight + hashBot] & gradientMask;
-            int gradientTopLeft = hash[hashLeft + hashTop] & gradientMask;
-            int gradientTopRight = hash[hashRight + hashTop] & gradientMask;
+            // Get the index to get the correct gradient
+            // This is done by adding together the x and y axis hashes/indexes retrieved before
+            // The mask is then used to prevent overflow
+            int gradientBotLeftIndex = hash[hashLeft + hashBot] & gradientMask;
+            int gradientBotRightIndex = hash[hashRight + hashBot] & gradientMask;
+            int gradientTopLeftIndex = hash[hashLeft + hashTop] & gradientMask;
+            int gradientTopRightIndex = hash[hashRight + hashTop] & gradientMask;
 
             // The dot product of each distance and gradient
-            float dotTopLeft = Vector2.Dot(avaliableGradients[gradientBotLeft], distanceBotLeft);
-            float dotTopRight = Vector2.Dot(avaliableGradients[gradientBotRight], distanceBotRight);
-            float dotBotLeft = Vector2.Dot(avaliableGradients[gradientTopLeft], distanceTopLeft);
-            float dotBotRight = Vector2.Dot(avaliableGradients[gradientTopRight], distanceTopRight);
+            // The gradient is retrieved from the list of available gradients
+            float dotTopLeft = Vector2.Dot(avaliableGradients[gradientBotLeftIndex], distanceBotLeft);
+            float dotTopRight = Vector2.Dot(avaliableGradients[gradientBotRightIndex], distanceBotRight);
+            float dotBotLeft = Vector2.Dot(avaliableGradients[gradientTopLeftIndex], distanceTopLeft);
+            float dotBotRight = Vector2.Dot(avaliableGradients[gradientTopRightIndex], distanceTopRight);
 
             // Get the fade value to use in the lerp
-            // X/Y is reduced from the floor to make it between 0 and 1
+            // Use the position locations so the values are not large
+            // And so it matches up with the cube
             float fadeX = Fade(pos.x);
             float fadeY = Fade(pos.y);
 
@@ -339,6 +378,10 @@ namespace ProceduralGenerationAddOn
             // Original Equation: 6t^5-15t^4+10t^3
             return value * value * value * (value * (value * m_multiplyFade - m_minusFade) + m_additionFade);
         }
+
+        #endregion
+
+        #region Fractal Brownian Motion Functions
 
         /// <summary>
         /// Fractal Brownian Motion to be applied on the perlin for better results
@@ -385,6 +428,10 @@ namespace ProceduralGenerationAddOn
             return value;
         }
 
+        #endregion
+
+        #region Terrain Functions
+
         /// <summary>
         /// Get the terrain in the scene, if there isn't spawn one
         /// </summary>
@@ -424,8 +471,8 @@ namespace ProceduralGenerationAddOn
                 for (int y = 0; y < maxY; y++)
                 {
                     // Make sure the height map doesn't follow the grid 1 for 1
-                    xLocation = ((float)x / maxX);
-                    yLocation = ((float)y / maxY);
+                    xLocation = ((float)x / maxX) + m_posOffset.x;
+                    yLocation = ((float)y / maxY) + m_posOffset.y;
 
                     // Get the height values using the perlin noise
                     heights[x, y] = Fractal(xLocation, yLocation);
@@ -438,5 +485,7 @@ namespace ProceduralGenerationAddOn
             // Create the terrain with the new height map
             CreateTerrain();
         }
+
+        #endregion
     }
 }

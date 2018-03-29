@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   28/03/2018
+//	Last Edited On:	   29/03/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -150,6 +150,8 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         void TerrainGUI()
         {
+            // TODO: Improve descriptions
+
             // Header
             GUILayout.Label("Terrain", m_header2Style);
             EditorGUILayout.Space();
@@ -161,6 +163,10 @@ namespace ProceduralGenerationAddOn
             // Heightmap Resolution
             m_perlinNoise.HeightmapResolution = EditorGUILayout.IntSlider(new GUIContent("Heightmap Resolution: ", "Default = 32"), 
                 m_perlinNoise.HeightmapResolution, heightmapResLowerBound, heightmapResHigherBound);
+            EditorGUILayout.Space();
+
+            // Offset
+            m_perlinNoise.PosOffset = EditorGUILayout.Vector2Field(new GUIContent("Position Offset: ", "Change the position of the perlin noise"), m_perlinNoise.PosOffset);
             EditorGUILayout.Space();
 
             //// Fade Change
