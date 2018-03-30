@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   29/03/2018
+//	Last Edited On:	   30/03/2018
 //	File:			   PerlinNoise.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -31,11 +31,11 @@ namespace ProceduralGenerationAddOn
         const int defaultAdditionFade = 10;
 
         // FBM defaults
-        const float octavesDefault = 1;
-        const float frequencyDefault = 6;
-        const float amplitudeDefault = 1;
-        const float amplitudeGainDefault = 0.5f;
-        const float lacunarityDefault = 2;
+        const float defaultOctaves = 1;
+        const float defaultFrequency = 6;
+        const float defaultAmplitude = 1;
+        const float defaultAmplitudeGain = 0.5f;
+        const float defaultLacunarity = 2;
 
         // Normalise
         const float normaliseMin = -1;
@@ -111,13 +111,13 @@ namespace ProceduralGenerationAddOn
         int m_additionFade = defaultAdditionFade;
 
         // Fractal Brownian Motion variables
-        float m_octaves = octavesDefault;             // Amount of times it iterates
-        float m_frequency = frequencyDefault;            // How much the bumps are spread out
-        float m_amplitude = amplitudeDefault;           // How flat it is
-        float m_amplitudeGain = amplitudeGainDefault;    // How much the amplitude increases after each iteration
-        float m_lacunarity = lacunarityDefault;         // How much the frequency is increased after each iteration
+        float m_octaves = defaultOctaves;             // Amount of times it iterates
+        float m_frequency = defaultFrequency;            // How much the bumps are spread out
+        float m_amplitude = defaultAmplitude;           // How flat it is
+        float m_amplitudeGain = defaultAmplitudeGain;    // How much the amplitude increases after each iteration
+        float m_lacunarity = defaultLacunarity;         // How much the frequency is increased after each iteration
 
-        float m_seed = 0;
+        int m_seed = 0;
         #endregion
 
         #region Properties
@@ -271,7 +271,38 @@ namespace ProceduralGenerationAddOn
             }
         }
 
+        public int Seed
+        {
+            get
+            {
+                return m_seed;
+            }
+
+            set
+            {
+                m_seed = value;
+            }
+        }
+
         #endregion
+
+        /// <summary>
+        /// Reset all variables the user can change back to their defaults
+        /// </summary>
+        public void ResetVariableValues()
+        {
+            m_terrainSize = new Vector3(defaultTerrainXSize, defaultTerrainYSize, defaultTerrainZSize);
+            m_posOffset = new Vector2(defaultXOffset, defaultYOffset);
+            m_heightmapResolution = defaultHeightmapRes;
+            m_multiplyFade = defaultMultiplyFade;
+            m_minusFade = defaultMinusFade;
+            m_additionFade = defaultAdditionFade;
+            m_octaves = defaultOctaves;
+            m_frequency = defaultFrequency;
+            m_amplitude = defaultAmplitude;
+            m_amplitudeGain = defaultAmplitudeGain;
+            m_lacunarity = defaultLacunarity;
+        }
 
         #region Perlin Noise Functions
 

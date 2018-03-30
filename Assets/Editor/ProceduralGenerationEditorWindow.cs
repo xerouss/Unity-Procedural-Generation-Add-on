@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   29/03/2018
+//	Last Edited On:	   30/03/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -39,6 +39,7 @@ namespace ProceduralGenerationAddOn
         }
 
         int m_levelType = 0;
+        bool m_realtimeGeneration = false;
         string[] m_levelTypeOptions = { "Terrain", "Dungeon" };
         static PerlinNoise m_perlinNoise;
 
@@ -92,7 +93,7 @@ namespace ProceduralGenerationAddOn
 
         private void Update()
         {
-            if(m_perlinNoise != null) m_perlinNoise.SetTerrainData();
+            if(m_perlinNoise != null && m_realtimeGeneration) m_perlinNoise.SetTerrainData();
         }
 
         /// <summary>
@@ -123,25 +124,47 @@ namespace ProceduralGenerationAddOn
                     break;
             }
 
-            // Create a new GameObject that contains the level
-            if(GUILayout.Button("Create Level"))
+            // If the user wants to update the terrain as they change it
+            m_realtimeGeneration = EditorGUILayout.Toggle(new GUIContent("Real-time Generation: ", "Update the terrain as you change it. Turn off for large terrains as it may cause problems"), m_realtimeGeneration);
+
+            // Don't need the button if the terrain is being auto updated
+            if (!m_realtimeGeneration)
             {
-                if (m_levelType == (int)LevelTypes.TERRAIN)
+
+                // Create a new GameObject that contains the level
+                // TODO: Implement this, does not create a new game object at the moment
+                // STILL NEED WITH THE REALTIME UPDATING?
+                if (GUILayout.Button("Create Level"))
                 {
-                    m_perlinNoise.SetTerrainData();
+                    if (m_levelType == (int)LevelTypes.TERRAIN)
+                    {
+                        m_perlinNoise.SetTerrainData();
+                    }
+                }
+
+                // Create the level using the existing GameObject
+                if (GUILayout.Button("Re-create Level"))
+                {
+                    if (m_levelType == (int)LevelTypes.TERRAIN)
+                    {
+                        m_perlinNoise.SetTerrainData();
+                    }
+                }
+
+                // Delete the level's GameObject
+                if (GUILayout.Button("Delete Level"))
+                {
+                    DestroyImmediate(GameObject.FindObjectOfType<Terrain>().gameObject);
                 }
             }
 
-            // Create the level using the existing GameObject
-            if (GUILayout.Button("Re-create Level"))
+            // Reset all variables to the default values
+            if (GUILayout.Button("Reset Variables"))
             {
-
-            }
-
-            // Delete the level's GameObject
-            if (GUILayout.Button("Delete Level"))
-            {
-
+                if (m_levelType == (int)LevelTypes.TERRAIN)
+                {
+                    m_perlinNoise.ResetVariableValues();
+                }
             }
         }
 
@@ -155,6 +178,9 @@ namespace ProceduralGenerationAddOn
             // Header
             GUILayout.Label("Terrain", m_header2Style);
             EditorGUILayout.Space();
+
+            // Seed
+            m_perlinNoise.Seed = EditorGUILayout.IntField(new GUIContent("Seed", "The seed of the current variables values"), m_perlinNoise.Seed);
 
             // Terrain size
             m_perlinNoise.TerrainSize = EditorGUILayout.Vector3Field(new GUIContent("Terrain Size:", "X = Width, Y = Higher the spikes in the level are, Z = Depth") , m_perlinNoise.TerrainSize);
@@ -181,7 +207,7 @@ namespace ProceduralGenerationAddOn
             m_perlinNoise.Octaves = EditorGUILayout.FloatField(new GUIContent("Octaves: ", "Amount of times it iterates. More = more detail"), m_perlinNoise.Octaves);
             m_perlinNoise.Frequency = EditorGUILayout.FloatField(new GUIContent("Frequency: ", "How much the bumps are spread out. Lower = flatter"), m_perlinNoise.Frequency);
             m_perlinNoise.Amplitude = EditorGUILayout.FloatField(new GUIContent("Amplitude: ", "How flat/tall it is"), m_perlinNoise.Amplitude);
-            m_perlinNoise.AmplitudeGain = EditorGUILayout.FloatField(new GUIContent("AmplitudeGain: ", "How much the amplitude increases after each iteration"), m_perlinNoise.AmplitudeGain);
+            m_perlinNoise.AmplitudeGain = EditorGUILayout.FloatField(new GUIContent("Amplitude Gain: ", "How much the amplitude increases after each iteration"), m_perlinNoise.AmplitudeGain);
             m_perlinNoise.Lacunarity = EditorGUILayout.FloatField(new GUIContent("Lacunarity: ", "How much the frequency is increased after each iteration"), m_perlinNoise.Lacunarity);
             EditorGUILayout.Space();
         }
