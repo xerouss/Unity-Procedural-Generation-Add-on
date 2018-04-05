@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   30/03/2018
+//	Last Edited On:	   05/04/2018
 //	File:			   PerlinNoise.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -297,16 +297,33 @@ namespace ProceduralGenerationAddOn
             // Make sure the length is correct (is num of variable *2 because of the length num)
             if (m_seed == value || value.Length < numOfVariablesUserCanChange * 2) return;
 
+            int numCheckValue = 0;
+            bool numCheck;
+
+            // Go through seed
+            for (int i = 0; i < value.Length; i++)
+            {
+                // Check if it's a number
+                numCheck = int.TryParse(value[i].ToString(), out numCheckValue);
+
+                // If it isn't a number check if it is a - for negative number or . for decimal points
+                // If it isn't one of them there is an incorrect character so don't set the variable to the seed
+                if(!numCheck)
+                {
+                    if (value[i] != '-' && value[i] != '.') return;
+                }
+            }
+
             // -1 the length because it starts at base 0
             int indexLower = value.Length - makeBase0;
             int indexUpper = value.Length - makeBase0;
             string numberString = "";
-            int numberInt = 0;
+            float numberFloat = 0;
 
             string valueString = value;
 
             // Go through all variables the user can change
-            for (int i = numOfVariablesUserCanChange - 1; i > 0; i--)
+            for (int i = numOfVariablesUserCanChange - 1; i >= 0; i--)
             {
                 // Find where the variable value gets cut off
                 indexLower -= (int)char.GetNumericValue(valueString[indexLower]);
@@ -318,8 +335,8 @@ namespace ProceduralGenerationAddOn
                 }
 
                 // Change it to an int and set it to the correct variables
-                numberInt = int.Parse(numberString);
-                SetUserVariable(i, numberInt);
+                numberFloat = float.Parse(numberString);
+                SetUserVariable(i, numberFloat);
 
                 // -1 from lower to move to the next variable's length
                 // The upper is now the lower value since we are now on the next variable
@@ -407,7 +424,7 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         /// <param name="index">The variable to set the value to</param>
         /// <param name="value">The new value</param>
-        void SetUserVariable(int index, int value)
+        void SetUserVariable(int index, float value)
         {
             switch (index)
             {
@@ -427,16 +444,16 @@ namespace ProceduralGenerationAddOn
                     m_posOffset.y = value;
                     break;
                 case 5:
-                    m_heightmapResolution = value;
+                    m_heightmapResolution = (int)value;
                     break;
                 case 6:
-                    m_multiplyFade = value;
+                    m_multiplyFade = (int)value;
                     break;
                 case 7:
-                    m_minusFade = value;
+                    m_minusFade = (int)value;
                     break;
                 case 8:
-                    m_additionFade = value;
+                    m_additionFade = (int)value;
                     break;
                 case 9:
                     m_octaves = value;
