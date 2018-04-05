@@ -34,7 +34,7 @@ namespace ProceduralGenerationAddOn
         const float defaultOctaves = 1;
         const float defaultFrequency = 6;
         const float defaultAmplitude = 1;
-        const float defaultAmplitudeGain = 0.5f;
+        const float defaultAmplitudeGain = 1;
         const float defaultLacunarity = 2;
 
         // Normalise
@@ -95,6 +95,12 @@ namespace ProceduralGenerationAddOn
             251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,
             49,192,214,31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,
             138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180};
+
+        // Seed
+        const int numOfVariablesUserCanChange = 14;
+        const int makeBase0 = 1;
+        const int goToNextVariable = 1;
+
         #endregion
 
         #region Variables
@@ -117,7 +123,7 @@ namespace ProceduralGenerationAddOn
         float m_amplitudeGain = defaultAmplitudeGain;    // How much the amplitude increases after each iteration
         float m_lacunarity = defaultLacunarity;         // How much the frequency is increased after each iteration
 
-        int m_seed = 0;
+        string m_seed = "0";
         #endregion
 
         #region Properties
@@ -271,7 +277,7 @@ namespace ProceduralGenerationAddOn
             }
         }
 
-        public int Seed
+        public string Seed
         {
             get
             {
@@ -283,8 +289,175 @@ namespace ProceduralGenerationAddOn
                 m_seed = value;
             }
         }
-
         #endregion
+
+        public void SetSeedToVariables(string value)
+        {
+            // Don't need to change the variables if they are the same
+            // Make sure the length is correct (is num of variable *2 because of the length num)
+            if (m_seed == value || value.Length < numOfVariablesUserCanChange * 2) return;
+
+            // -1 the length because it starts at base 0
+            int indexLower = value.Length - makeBase0;
+            int indexUpper = value.Length - makeBase0;
+            string numberString = "";
+            int numberInt = 0;
+
+            string valueString = value;
+
+            // Go through all variables the user can change
+            for (int i = numOfVariablesUserCanChange - 1; i > 0; i--)
+            {
+                // Find where the variable value gets cut off
+                indexLower -= (int)char.GetNumericValue(valueString[indexLower]);
+
+                // Get the variable value
+                for (int j = indexLower; j <= indexUpper - 1; j++)
+                {
+                    numberString += valueString[j];
+                }
+
+                // Change it to an int and set it to the correct variables
+                numberInt = int.Parse(numberString);
+                SetUserVariable(i, numberInt);
+
+                // -1 from lower to move to the next variable's length
+                // The upper is now the lower value since we are now on the next variable
+                indexLower -= goToNextVariable;
+                indexUpper = indexLower;
+
+                // Reset the number since we don't want to keep adding to the previous variable
+                numberString = "";
+            }
+
+            m_seed = value;
+        }
+
+        /// <summary>
+        /// Updates the seed value with the current variable inputs
+        /// </summary>
+        /// <returns>The seed value</returns> 
+        public string UpdateSeed()
+        {
+            string seedValue = "";
+            string variableValueString = "";
+
+            // Get all variable values
+            for (int i = 0; i < numOfVariablesUserCanChange; i++)
+            {
+                // Convert the variable to string so the length of it can be added to the end of it
+                variableValueString = GetUserVariable(i).ToString();
+                variableValueString += variableValueString.Length.ToString();
+
+                // Add it to the total seed value
+                seedValue += variableValueString;
+            }
+
+            // Convert the value to an int and set it to the seed
+             m_seed = seedValue;
+
+            return m_seed;
+        }
+
+        /// <summary>
+        /// Get the value of one of the variables that the user can change
+        /// </summary>
+        /// <param name="index">The variable to get the value from</param>
+        /// <returns>Variable value</returns>
+        float GetUserVariable(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return m_terrainSize.x;
+                case 1:
+                    return m_terrainSize.y;
+                case 2:
+                    return m_terrainSize.z;
+                case 3:
+                    return m_posOffset.x;
+                case 4:
+                    return m_posOffset.y;
+                case 5:
+                    return m_heightmapResolution;
+                case 6:
+                    return m_multiplyFade;
+                case 7:
+                    return m_minusFade;
+                case 8:
+                    return m_additionFade;
+                case 9:
+                    return m_octaves;
+                case 10:
+                    return m_frequency;
+                case 11:
+                    return m_amplitude;
+                case 12:
+                    return m_amplitudeGain;
+                case 13:
+                    return m_lacunarity;
+                default:
+                    Debug.Log("Incorrect index when getting user variable.");
+                    return 0;
+            }
+        }
+
+        /// <summary>
+        /// Set a value to a variable that the user can change
+        /// </summary>
+        /// <param name="index">The variable to set the value to</param>
+        /// <param name="value">The new value</param>
+        void SetUserVariable(int index, int value)
+        {
+            switch (index)
+            {
+                case 0:
+                    m_terrainSize.x = value;
+                    break;
+                case 1:
+                    m_terrainSize.y = value;
+                    break;
+                case 2:
+                    m_terrainSize.z = value;
+                    break;
+                case 3:
+                    m_posOffset.x = value;
+                    break;
+                case 4:
+                    m_posOffset.y = value;
+                    break;
+                case 5:
+                    m_heightmapResolution = value;
+                    break;
+                case 6:
+                    m_multiplyFade = value;
+                    break;
+                case 7:
+                    m_minusFade = value;
+                    break;
+                case 8:
+                    m_additionFade = value;
+                    break;
+                case 9:
+                    m_octaves = value;
+                    break;
+                case 10:
+                    m_frequency = value;
+                    break;
+                case 11:
+                    m_amplitude = value;
+                    break;
+                case 12:
+                    m_amplitudeGain = value;
+                    break;
+                case 13:
+                    m_lacunarity = value;
+                    break;
+                default:
+                    Debug.Log("Incorrect index when setting user variable.");
+                    break;
+            }
+        }
 
         /// <summary>
         /// Reset all variables the user can change back to their defaults
@@ -315,6 +488,8 @@ namespace ProceduralGenerationAddOn
             m_terrainData = new TerrainData();
             m_terrainData.SetDetailResolution(terrainRes, terrainResPerBatch);
             m_terrainData.baseMapResolution = terrainRes;
+
+            UpdateSeed();
         }
 
         /// <summary>

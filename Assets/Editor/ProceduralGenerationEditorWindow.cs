@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   30/03/2018
+//	Last Edited On:	   05/04/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -29,7 +29,7 @@ namespace ProceduralGenerationAddOn
         const int minWindowSize = 480;
         const int dropdownSpaceHeight = 15;
         const int heightmapResLowerBound = 0;
-        const int heightmapResHigherBound = 256;
+        const int heightmapResHigherBound = 512;
         #endregion
 
         #region Private
@@ -41,6 +41,7 @@ namespace ProceduralGenerationAddOn
         int m_levelType = 0;
         bool m_realtimeGeneration = false;
         string[] m_levelTypeOptions = { "Terrain", "Dungeon" };
+        static string m_tempSeed;
         static PerlinNoise m_perlinNoise;
 
         #region Style Variables
@@ -71,6 +72,8 @@ namespace ProceduralGenerationAddOn
 
             // Create the perlin noise so it can be used
             m_perlinNoise = new PerlinNoise(256 * 2);
+
+            m_tempSeed = m_perlinNoise.Seed;
         }
 
         /// <summary>
@@ -102,7 +105,10 @@ namespace ProceduralGenerationAddOn
         void OnGUI()
         {
             // Header
-            GUILayout.Label("Procedurally Generate Level", m_header1Style); //new Rect(10, 10, 300, 100), "Procedurally Generate Level", m_header1Style);
+            GUILayout.Label("Procedurally Generate Level", m_header1Style);
+            EditorGUILayout.Space();
+
+            GUILayout.Label("Hover over the variable name for information on what they change.");
             EditorGUILayout.Space();
 
             // Dropdown box to select the level 
@@ -180,7 +186,9 @@ namespace ProceduralGenerationAddOn
             EditorGUILayout.Space();
 
             // Seed
-            m_perlinNoise.Seed = EditorGUILayout.IntField(new GUIContent("Seed", "The seed of the current variables values"), m_perlinNoise.Seed);
+            GUI.SetNextControlName("Seed Field"); // Set a name for the seed field to check if it's highlighted (look at the end of the function)
+            // Use a temp seed so the seed only changes when the user is not currently editing it/highlighted it
+            m_tempSeed = EditorGUILayout.TextField(new GUIContent("Seed: ", "The seed of the current variables values"), m_tempSeed);
 
             // Terrain size
             m_perlinNoise.TerrainSize = EditorGUILayout.Vector3Field(new GUIContent("Terrain Size:", "X = Width, Y = Higher the spikes in the level are, Z = Depth") , m_perlinNoise.TerrainSize);
@@ -210,6 +218,20 @@ namespace ProceduralGenerationAddOn
             m_perlinNoise.AmplitudeGain = EditorGUILayout.FloatField(new GUIContent("Amplitude Gain: ", "How much the amplitude increases after each iteration"), m_perlinNoise.AmplitudeGain);
             m_perlinNoise.Lacunarity = EditorGUILayout.FloatField(new GUIContent("Lacunarity: ", "How much the frequency is increased after each iteration"), m_perlinNoise.Lacunarity);
             EditorGUILayout.Space();
+
+            // If the seed field is not selected
+            if(GUI.GetNameOfFocusedControl() != "Seed Field")
+            {
+                // If the temp seed if different to the actual seed, make them the same
+                // This is done when the field is not selected so if the user removes a number it does not produce an error
+                // The if statement is required because the is no reason to change the seed if they are the same
+                if (m_tempSeed != m_perlinNoise.Seed) m_perlinNoise.SetSeedToVariables(m_tempSeed);
+
+                // Set the variable values to the seed values and set temp seed to the actual see
+                // This is done when the field is not selected because we don't want incorrect numbers appearing on the variables
+                // When the user is moving around seed values
+                m_tempSeed = m_perlinNoise.UpdateSeed();
+            }
         }
 
         /// <summary>
