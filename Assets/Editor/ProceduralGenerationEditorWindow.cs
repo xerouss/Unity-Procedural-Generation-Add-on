@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   05/04/2018
+//	Last Edited On:	   07/04/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -43,6 +43,7 @@ namespace ProceduralGenerationAddOn
         string[] m_levelTypeOptions = { "Terrain", "Dungeon" };
         static string m_tempSeed;
         static PerlinNoise m_perlinNoise;
+        static BinarySpacePartition m_binarySpacePartition;
 
         #region Style Variables
         static GUIStyle m_header1Style;
@@ -74,6 +75,8 @@ namespace ProceduralGenerationAddOn
             m_perlinNoise = new PerlinNoise(256 * 2);
 
             m_tempSeed = m_perlinNoise.Seed;
+
+            m_binarySpacePartition = new BinarySpacePartition();
         }
 
         /// <summary>
@@ -145,6 +148,11 @@ namespace ProceduralGenerationAddOn
                     if (m_levelType == (int)LevelTypes.TERRAIN)
                     {
                         m_perlinNoise.SetTerrainData();
+                    }
+                    else
+                    {
+                        m_binarySpacePartition.CreateCells();
+                        m_binarySpacePartition.CreateRooms();
                     }
                 }
 
@@ -240,6 +248,9 @@ namespace ProceduralGenerationAddOn
         void DungeonGUI()
         {
             GUILayout.Label("Dungeon", m_header2Style);
+            EditorGUILayout.Space();
+
+            m_binarySpacePartition.FloorTile = EditorGUILayout.ObjectField(new GUIContent("Floor Tile: ", "The tile used for the floor of the dungeon"), m_binarySpacePartition.FloorTile, typeof(GameObject), false) as GameObject;
         }
     }
 }
