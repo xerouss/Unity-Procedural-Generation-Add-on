@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   05/04/2018
+//	Last Edited On:	   17/04/2018
 //	File:			   PerlinNoise.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -524,10 +524,7 @@ namespace ProceduralGenerationAddOn
             // Get the hash values of the x axis of the square
             // Use the hash mask to prevent overflow
             // +1 to get the right side since the square is 1 in length
-
-            //////////////////////////////////////////////
-            // TODO WHY DO WE HASH THESE BUT NOT THE Y VALUES??
-            //////////////////////////////////////////////
+            // The x axis is hashed because it is added to the y later
             int hashLeft = floorX & hashMask;
             int hashRight = hash[hashLeft + 1];
             hashLeft = hash[hashLeft];
@@ -548,6 +545,7 @@ namespace ProceduralGenerationAddOn
 
             // Get the index to get the correct gradient
             // This is done by adding together the x and y axis hashes/indexes retrieved before
+            // The x hashed value is added to the y value to get the correct hash value
             // The mask is then used to prevent overflow
             int gradientBotLeftIndex = hash[hashLeft + hashBot] & gradientMask;
             int gradientBotRightIndex = hash[hashRight + hashBot] & gradientMask;

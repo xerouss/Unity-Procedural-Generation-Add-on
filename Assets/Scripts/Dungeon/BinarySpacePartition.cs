@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   07/04/2018
+//	Last Edited On:	   16/04/2018
 //	File:			   BinarySpacePartition.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -34,8 +34,12 @@ namespace ProceduralGenerationAddOn
         Vector2 m_levelSize = new Vector2(10, 10); // Temp size, TODO: REMOVE
         int m_numOfRooms;
         // Change to desired rooms sizes?
-        int m_splitAmount = 7; // Amount of times the grid is divided before the rooms are set
+        int m_splitAmount = 3; // Amount of times the grid is divided before the rooms are set
         GameObject m_floorTile;
+
+        // TODO REMOVE THIS AFTER DEBUGGING
+        GameObject m_floorTile2;
+        GameObject m_floorTile3;
 
         public GameObject FloorTile
         {
@@ -47,6 +51,32 @@ namespace ProceduralGenerationAddOn
             set
             {
                 m_floorTile = value;
+            }
+        }
+
+        public GameObject FloorTile2
+        {
+            get
+            {
+                return m_floorTile2;
+            }
+
+            set
+            {
+                m_floorTile2 = value;
+            }
+        }
+
+        public GameObject FloorTile3
+        {
+            get
+            {
+                return m_floorTile3;
+            }
+
+            set
+            {
+                m_floorTile3 = value;
             }
         }
 
@@ -62,7 +92,7 @@ namespace ProceduralGenerationAddOn
 
             // Create the root and add it to the tree
             // TODO: let the user change these values
-            m_treeRootNode = new BSPTreeNode(new Vector2(25, 25), 50, 50, m_floorTile);
+            m_treeRootNode = new BSPTreeNode(new Vector2(10, 10), 20, 20, Vector2.zero, m_floorTile, m_floorTile2, m_floorTile3);
             splitQueue.Enqueue(m_treeRootNode);
 
             // For the amount of time the user wants to split the cells
@@ -82,7 +112,7 @@ namespace ProceduralGenerationAddOn
 
         public void CreateRooms()
         {
-            m_treeRootNode.CreateRoom();
+            m_treeRootNode.CreateRoom(1);
         }
     }
 }

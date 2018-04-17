@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   07/04/2018
+//	Last Edited On:	   17/04/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -251,6 +251,16 @@ namespace ProceduralGenerationAddOn
             EditorGUILayout.Space();
 
             m_binarySpacePartition.FloorTile = EditorGUILayout.ObjectField(new GUIContent("Floor Tile: ", "The tile used for the floor of the dungeon"), m_binarySpacePartition.FloorTile, typeof(GameObject), false) as GameObject;
+
+            ///////////////////////////////
+            //TODO REMOVE THIS AFTER DEBUGGING
+            EditorGUILayout.Space();
+
+            m_binarySpacePartition.FloorTile2 = EditorGUILayout.ObjectField(new GUIContent("Floor Tile: ", "The tile used for the floor of the dungeon"), m_binarySpacePartition.FloorTile2, typeof(GameObject), false) as GameObject;
+            EditorGUILayout.Space();
+
+            m_binarySpacePartition.FloorTile3 = EditorGUILayout.ObjectField(new GUIContent("Floor Tile: ", "The tile used for the floor of the dungeon"), m_binarySpacePartition.FloorTile3, typeof(GameObject), false) as GameObject;
+            ///////////////////////////////
         }
     }
 }
