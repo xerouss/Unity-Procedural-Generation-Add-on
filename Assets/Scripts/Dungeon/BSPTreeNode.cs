@@ -256,7 +256,7 @@ namespace ProceduralGenerationAddOn
             centre.y += m_botLeftCorner.y;
 
             // Create and attach the new cell made
-            BSPTreeNode node = new BSPTreeNode(centre, node1Width, node1Height, m_botLeftCorner,  m_floorTile, m_floorTile2, m_floorTile3);
+            BSPTreeNode node = new BSPTreeNode(centre, node1Width, node1Height, m_botLeftCorner, m_floorTile, m_floorTile2, m_floorTile3);
             AttachNode(node);
 
             // Create the other node
@@ -292,12 +292,12 @@ namespace ProceduralGenerationAddOn
         public void CreateRoom(int debugNum)
         {
             Debug.Log(debugNum + ": " + m_centre + " | WIDTH: " + m_width + " | HEIGHT: " + m_height);
-            int roomWidth = Mathf.FloorToInt(m_width / 2);
-            int roomHeight = Mathf.FloorToInt(m_height / 2);
+            //int roomWidth = Mathf.FloorToInt(m_width / 2);
+            //int roomHeight = Mathf.FloorToInt(m_height / 2);
             //Debug.Log("ROOMWIDTH: " + roomWidth + " | ROOMHEIGHT: " + roomHeight);
             debugNum++;
 
-            // Check if the node has any children since we only create cells with none
+            // Check if the node has any children since we only create rooms with none
             if (m_children.Count > 0)
             {
                 // Go through each child and check them to see if they can create rooms
@@ -306,52 +306,128 @@ namespace ProceduralGenerationAddOn
                     m_children[i].CreateRoom(debugNum);
                 }
             }
-            // TODO Add user input here
-            // Get the width and height of the room
-            // Is divided by 2 so they go across the centre of the room
-            //int roomWidth = Random.Range(m_minimumCellSize, m_width) / 2;
-            //int roomHeight = Random.Range(m_minimumCellSize, m_height) / 2;
-            GameObject parent = new GameObject();
-            parent.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
-
-            // TODO Need to add width/height to the loop increments
-            // Spawn the tiles in the room in the scene
-            GameObject floor;
-
-            switch (debugNum)
+            else
             {
-                case 1:
-                    floor = m_floorTile;
-                    break;
-                case 2:
-                    floor = m_floorTile2;
-                    break;
-                case 3:
-                    floor = m_floorTile3;
-                    break;
-                default:
-                    floor = m_floorTile;
-                    break;
+                // TODO Add user input here
+                // Get the width and height of the room
+                // Is divided by 2 so they go across the centre of the room
+                int roomWidth = Random.Range(m_minimumCellSize, m_width) / 2;
+                int roomHeight = Random.Range(m_minimumCellSize, m_height) / 2;
+                GameObject parent = new GameObject();
+                parent.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
+                parent.name = "Room";
+
+                // TODO Need to add width/height to the loop increments
+                // Spawn the tiles in the room in the scene
+                GameObject floor;
+
+                switch (debugNum)
+                {
+                    case 1:
+                        floor = m_floorTile;
+                        break;
+                    case 2:
+                        floor = m_floorTile2;
+                        break;
+                    case 3:
+                        floor = m_floorTile3;
+                        break;
+                    default:
+                        floor = m_floorTile;
+                        break;
+                }
+
+                // Get the upper bound of the room
+                int xUpper = (int)m_centre.x + roomWidth;
+                int yUpper = (int)m_centre.y + roomHeight;
+
+                // Check if the width/height is odd
+                // If so add 1 to upper to output the correct size
+                // Can't split the value both sides since its an odd number so add the remainder to the end
+                if (m_width % checkIfEvenNumber == oddNumber) xUpper++;
+                if (m_height % checkIfEvenNumber == oddNumber) yUpper++;
+
+                // Go through room and output
+                // TODO add tile width/height to the increments
+                for (int x = Mathf.FloorToInt(m_centre.x - roomWidth); x < xUpper; x++)
+                {
+                    for (int y = Mathf.FloorToInt(m_centre.y - roomHeight); y < yUpper; y++)
+                    {
+                        GameObject.Instantiate(floor, new Vector3(x, 1, y), floor.transform.rotation, parent.transform);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Create the corridor to connect to the parent cell
+        /// </summary>
+        /// <param name="parentCentre">The parent's cell centre</param>
+        public void CreateCorridorToParent(Vector2 parentCentre)
+        {
+
+            // Check if the node has any children since we want to start with the leaf nodes first
+            if (m_children.Count > 0)
+            {
+                // Go through each child and connect them with this node
+                for (int i = 0; i < m_children.Count; i++)
+                {
+                    m_children[i].CreateCorridorToParent(m_centre);
+                }
             }
 
-            // Get the upper bound of the room
-            int xUpper = (int)m_centre.x + roomWidth;
-            int yUpper = (int)m_centre.y + roomHeight;
+            // For the parent node since it doesn't have anything to connect to
+            if (parentCentre == Vector2.zero) return;
 
-            // Check if the width/height is odd
-            // If so add 1 to upper to output the correct size
-            // Can't split the value both sides since its an odd number so add the remainder to the end
-            if (m_width % checkIfEvenNumber == oddNumber) xUpper++;
-            if (m_height % checkIfEvenNumber == oddNumber) yUpper++;
-
-            // Go through room and output
-            // TODO add tile width/height to the increments
-            for (int x = Mathf.FloorToInt(m_centre.x - roomWidth); x < xUpper; x++)
+            // Based on the parent's position to the current node
+            // Spawn the corridor
+            // Should only be in 4 straight line directions due to the splitting keeping one axis the same
+            if (m_centre.x < parentCentre.x)
             {
-                for (int y = Mathf.FloorToInt(m_centre.y - roomHeight); y < yUpper; y++)
-                {
-                    GameObject.Instantiate(floor, new Vector3(x, debugNum * 5, y), floor.transform.rotation, parent.transform);
-                }
+                SpawnCorridor(Mathf.FloorToInt(m_centre.x), Mathf.FloorToInt(parentCentre.x), true, Mathf.FloorToInt(m_centre.y));
+            }
+            else if (m_centre.x > parentCentre.x)
+            {
+                SpawnCorridor(Mathf.FloorToInt(parentCentre.x), Mathf.FloorToInt(m_centre.x), true, Mathf.FloorToInt(m_centre.y));
+            }
+            else if (m_centre.y < parentCentre.y)
+            {
+                SpawnCorridor(Mathf.FloorToInt(m_centre.y), Mathf.FloorToInt(parentCentre.y), false, Mathf.FloorToInt(m_centre.x));
+            }
+            else
+            {
+                SpawnCorridor(Mathf.FloorToInt(parentCentre.y), Mathf.FloorToInt(m_centre.y), false, Mathf.FloorToInt(m_centre.x));
+            }
+        }
+
+        /// <summary>
+        /// Spawn the corridor
+        /// </summary>
+        /// <param name="lowerBound">The start of the corridor</param>
+        /// <param name="upperBound">The end of the corridor</param>
+        /// <param name="xAxis">Is the corridor going across on the x axis?</param>
+        /// <param name="otherAxisValue">The value for the axis which the corridor is NOT going across</param>
+        public void SpawnCorridor(int lowerBound, int upperBound, bool xAxis, int otherAxisValue)
+        {
+            // Create the parent object to clean the hierarchy up
+            GameObject parent = new GameObject();
+            parent.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
+            parent.name = "Corridor";
+
+            int x = 0;
+            int y = 0;
+
+            // Set the value for the axis the corridor won't be across on
+            if (xAxis) y = otherAxisValue;
+            else x = otherAxisValue;
+
+            for (int i = lowerBound; i < upperBound; i++)
+            {
+                // Set the correct axis
+                if (xAxis) x = i;
+                else y = i;
+
+                GameObject.Instantiate(m_floorTile, new Vector3(x, 1, y), m_floorTile.transform.rotation, parent.transform);
             }
         }
     }

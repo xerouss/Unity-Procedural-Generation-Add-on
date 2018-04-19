@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   17/04/2018
+//	Last Edited On:	   19/04/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -153,6 +153,7 @@ namespace ProceduralGenerationAddOn
                     {
                         m_binarySpacePartition.CreateCells();
                         m_binarySpacePartition.CreateRooms();
+                        m_binarySpacePartition.CreateCorridors();
                     }
                 }
 

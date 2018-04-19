@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   16/04/2018
+//	Last Edited On:	   19/04/2018
 //	File:			   BinarySpacePartition.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -110,9 +110,20 @@ namespace ProceduralGenerationAddOn
             }
         }
 
+        /// <summary>
+        /// Create the rooms instead the cells for the BSP
+        /// </summary>
         public void CreateRooms()
         {
             m_treeRootNode.CreateRoom(1);
+        }
+
+        /// <summary>
+        /// Create the corridors to connect the rooms together
+        /// </summary>
+        public void CreateCorridors()
+        {
+            m_treeRootNode.CreateCorridorToParent(Vector2.zero);
         }
     }
 }
