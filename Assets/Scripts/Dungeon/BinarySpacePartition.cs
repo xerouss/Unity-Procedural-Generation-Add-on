@@ -34,7 +34,7 @@ namespace ProceduralGenerationAddOn
         Vector2 m_levelSize = new Vector2(10, 10); // Temp size, TODO: REMOVE
         int m_numOfRooms;
         // Change to desired rooms sizes?
-        int m_splitAmount = 3; // Amount of times the grid is divided before the rooms are set
+        int m_splitAmount = 7; // Amount of times the grid is divided before the rooms are set
         GameObject m_floorTile;
 
         // TODO REMOVE THIS AFTER DEBUGGING

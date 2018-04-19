@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   17/04/2018
+//	Last Edited On:	   19/04/2018
 //	File:			   BSPTreeNode.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -9,7 +9,6 @@
 // Libraries and namespaces
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor;
 ////////////////////////////////////////////
 
 /// <summary>
@@ -25,6 +24,8 @@ namespace ProceduralGenerationAddOn
         const int falseValue = 2;
         const int splitBound = 3;
         const int getCentre = 2;
+        const int checkIfEvenNumber = 2;
+        const int oddNumber = 1;
 
         #endregion
 
@@ -38,7 +39,7 @@ namespace ProceduralGenerationAddOn
         GameObject m_floorTile;
         GameObject m_floorTile2;
         GameObject m_floorTile3;
-        int m_minimumCellSize = 1;
+        int m_minimumCellSize = 3;
 
         #endregion
 
@@ -159,8 +160,8 @@ namespace ProceduralGenerationAddOn
 
             // Check if the cell can be split vertically or horizontally
             // This is to prevent the newly created cells having a width/height smaller than the minimum
-            if (m_width - splitBound > MinimumCellSize) canSplitVertically = true;
-            if (m_height - splitBound > MinimumCellSize) canSplitHorizontally = true;
+            if (m_width - splitBound > m_minimumCellSize) canSplitVertically = true;
+            if (m_height - splitBound > m_minimumCellSize) canSplitHorizontally = true;
 
             // Can split either way so randomly chose it
             // TODO: let the user input the likelihood of the split?
@@ -171,12 +172,13 @@ namespace ProceduralGenerationAddOn
             // Can only split horizontally
             else if (canSplitHorizontally && !canSplitVertically)
             {
-                canSplitVertically = false;
+                splitVertically = false;
             }
             // Can only split vertically
             else if (!canSplitHorizontally && canSplitVertically)
             {
-                canSplitVertically = true;
+                splitVertically = true;
+
             }
             // Cannot split either way so don't
             else return;
@@ -248,6 +250,8 @@ namespace ProceduralGenerationAddOn
         {
             // Centre is just half of the new width and height
             Vector2 centre = new Vector2(node1Width / getCentre, node1Height / getCentre);
+            // Apply the offset to the centre so the outputted room is in the correct location
+            // Without this it will spawn based on (0,0)
             centre.x += m_botLeftCorner.x;
             centre.y += m_botLeftCorner.y;
 
@@ -272,8 +276,12 @@ namespace ProceduralGenerationAddOn
                 botLeft.y += splitPos;
             }
 
+            // Apply the offset to the centre so the outputted room is in the correct location
+            // Without this it will spawn based on (0,0)
             centre.x += m_botLeftCorner.x;
             centre.y += m_botLeftCorner.y;
+
+            // Create and attach the other node
             node = new BSPTreeNode(centre, node2Width, node2Height, botLeft, m_floorTile, m_floorTile2, m_floorTile3);
             AttachNode(node);
         }
@@ -283,13 +291,10 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public void CreateRoom(int debugNum)
         {
-            Debug.Log(debugNum + ": " + m_centre);
-            int roomWidth = m_width / 2;
-            int roomHeight = m_height / 2;
-            Debug.Log("WIDTH: " + m_width);
-            Debug.Log("HEIGHT: " + m_height);
-            Debug.Log("CORNER: " + m_botLeftCorner);
-
+            Debug.Log(debugNum + ": " + m_centre + " | WIDTH: " + m_width + " | HEIGHT: " + m_height);
+            int roomWidth = Mathf.FloorToInt(m_width / 2);
+            int roomHeight = Mathf.FloorToInt(m_height / 2);
+            //Debug.Log("ROOMWIDTH: " + roomWidth + " | ROOMHEIGHT: " + roomHeight);
             debugNum++;
 
             // Check if the node has any children since we only create cells with none
@@ -303,22 +308,14 @@ namespace ProceduralGenerationAddOn
             }
             // TODO Add user input here
             // Get the width and height of the room
-            // The 5 is for bound TODO: change this to a variable
             // Is divided by 2 so they go across the centre of the room
-            //int roomWidth = Random.Range(5, m_width - 5) / 2;
-            //int roomHeight = Random.Range(5, m_height - 5) / 2;
-            //Debug.Log("ROOMWIDTH: " + roomWidth);
-            //Debug.Log("ROOMHEIGHT: " + roomHeight);
-            //Debug.Log("WIDTH: " + m_width);
-            // Debug.Log("HEIGHT: " + m_height);
-            GameObject parent = MonoBehaviour.Instantiate(new GameObject(), new Vector3(m_centre.x, 1, m_centre.y), Quaternion.identity);
+            //int roomWidth = Random.Range(m_minimumCellSize, m_width) / 2;
+            //int roomHeight = Random.Range(m_minimumCellSize, m_height) / 2;
+            GameObject parent = new GameObject();
+            parent.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
 
             // TODO Need to add width/height to the loop increments
             // Spawn the tiles in the room in the scene
-            //for (int x = (int)m_centre.x - roomWidth; x < m_centre.x + roomWidth; x++)
-            //{
-            //    for (int y = (int)m_centre.y - roomHeight; y < m_centre.y + roomHeight; y++)
-            //    {
             GameObject floor;
 
             switch (debugNum)
@@ -337,9 +334,21 @@ namespace ProceduralGenerationAddOn
                     break;
             }
 
-            for (int x = Mathf.FloorToInt(m_centre.x - roomWidth); x <= m_centre.x + roomWidth; x++)
+            // Get the upper bound of the room
+            int xUpper = (int)m_centre.x + roomWidth;
+            int yUpper = (int)m_centre.y + roomHeight;
+
+            // Check if the width/height is odd
+            // If so add 1 to upper to output the correct size
+            // Can't split the value both sides since its an odd number so add the remainder to the end
+            if (m_width % checkIfEvenNumber == oddNumber) xUpper++;
+            if (m_height % checkIfEvenNumber == oddNumber) yUpper++;
+
+            // Go through room and output
+            // TODO add tile width/height to the increments
+            for (int x = Mathf.FloorToInt(m_centre.x - roomWidth); x < xUpper; x++)
             {
-                for (int y = Mathf.FloorToInt(m_centre.y - roomHeight); y <= m_centre.y + roomHeight; y++)
+                for (int y = Mathf.FloorToInt(m_centre.y - roomHeight); y < yUpper; y++)
                 {
                     GameObject.Instantiate(floor, new Vector3(x, debugNum * 5, y), floor.transform.rotation, parent.transform);
                 }
