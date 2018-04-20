@@ -259,45 +259,12 @@ namespace ProceduralGenerationAddOn
 
             if (splitVertically)
             {
-                #region old version which might be needed
-                /*
-                // Centre is just half of the new width and height
-                // Uses splitLocation as the width because this is the left side of the split
-                Vector2 centre = new Vector2(splitLocation / getCentre, m_height / getCentre);
-
-                // Create and attach the new cell made
-                BSPTreeNode node = new BSPTreeNode(centre, splitLocation, m_height);
-                AttachNode(node);
-
-                // Create the other cell which is made
-                // Uses width - splitLocation because it is the right side of the split
-                int newWidth = m_width - splitLocation;
-                centre.x = newWidth / 2;
-                node = new BSPTreeNode(centre, newWidth, m_height);
-                AttachNode(node);
-                */
-
-                #endregion
                 // The 1st node has split location as it's width since it was cut vertically at that location
                 // And that is one side, while the other node has the other side of the split's width
                 AddSplitNodesToTree(splitLocation, m_height, m_width - splitLocation, m_height, true, splitLocation);
             }
             else
             {
-                #region old version which might be needed
-                /*
-                // Uses splitLocation as the height because this is the top side of the split
-                Vector2 centre = new Vector2(m_width, splitLocation / getCentre);
-                BSPTreeNode node = new BSPTreeNode(centre, m_width, splitLocation);
-                AttachNode(node);
-
-                // Uses splitLocation as the height because this is the bot side of the split
-                int newHeight = m_height - splitLocation;
-                centre.y = (newHeight) / 2;
-                node = new BSPTreeNode(centre, m_width, newHeight);
-                AttachNode(node);
-                */
-                #endregion
                 // The 1st node has split location as it's height since it was cut horizontally at that location
                 // And that is one side, while the other node has the other side of the split's height
                 AddSplitNodesToTree(m_width, splitLocation, m_width, m_height - splitLocation, false, splitLocation);
@@ -454,19 +421,19 @@ namespace ProceduralGenerationAddOn
             // Should only be in 4 straight line directions due to the splitting keeping one axis the same
             if (m_centre.x < parent.Centre.x)
             {
-                SpawnCorridor(Mathf.FloorToInt(m_centre.x), Mathf.FloorToInt(parent.Centre.x), true, Mathf.FloorToInt(m_centre.y));
+                CreateCorridor(Mathf.FloorToInt(m_centre.x), Mathf.FloorToInt(parent.Centre.x), true, Mathf.FloorToInt(m_centre.y));
             }
             else if (m_centre.x > parent.Centre.x)
             {
-                SpawnCorridor(Mathf.FloorToInt(parent.Centre.x), Mathf.FloorToInt(m_centre.x), true, Mathf.FloorToInt(m_centre.y));
+                CreateCorridor(Mathf.FloorToInt(parent.Centre.x), Mathf.FloorToInt(m_centre.x), true, Mathf.FloorToInt(m_centre.y));
             }
             else if (m_centre.y < parent.Centre.y)
             {
-                SpawnCorridor(Mathf.FloorToInt(m_centre.y), Mathf.FloorToInt(parent.Centre.y), false, Mathf.FloorToInt(m_centre.x));
+                CreateCorridor(Mathf.FloorToInt(m_centre.y), Mathf.FloorToInt(parent.Centre.y), false, Mathf.FloorToInt(m_centre.x));
             }
             else
             {
-                SpawnCorridor(Mathf.FloorToInt(parent.Centre.y), Mathf.FloorToInt(m_centre.y), false, Mathf.FloorToInt(m_centre.x));
+                CreateCorridor(Mathf.FloorToInt(parent.Centre.y), Mathf.FloorToInt(m_centre.y), false, Mathf.FloorToInt(m_centre.x));
             }
         }
 
@@ -477,7 +444,7 @@ namespace ProceduralGenerationAddOn
         /// <param name="upperBound">The end of the corridor</param>
         /// <param name="xAxis">Is the corridor going across on the x axis?</param>
         /// <param name="otherAxisValue">The value for the axis which the corridor is NOT going across</param>
-        public void SpawnCorridor(int lowerBound, int upperBound, bool xAxis, int otherAxisValue)
+        public void CreateCorridor(int lowerBound, int upperBound, bool xAxis, int otherAxisValue)
         {
             // Create the parent object to clean the hierarchy up
             //GameObject parent = new GameObject();
@@ -501,31 +468,5 @@ namespace ProceduralGenerationAddOn
                 // GameObject.Instantiate(m_floorTile, new Vector3(x, 1, y), m_floorTile.transform.rotation, parent.transform);
             }
         }
-
-        //public void SpawnDungeon()
-        //{
-        //    GameObject parentCorridor = new GameObject();
-        //    parentCorridor.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
-        //    parentCorridor.name = "Corridor";
-
-        //    GameObject parentRoom = new GameObject();
-        //    parentRoom.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
-        //    parentRoom.name = "Rooms";
-
-        //    for (int x = 0; x < m_width; x++)
-        //    {
-        //        for (int y = 0; y < m_height; y++)
-        //        {
-        //            if(m_spawnGrid[x, y] == roomGridNum)
-        //            {
-        //                GameObject.Instantiate(m_floorTile, new Vector3(x, 1, y), m_floorTile.transform.rotation, parentRoom.transform);
-        //            }
-        //            else if(m_spawnGrid[x, y] == corridorGridNum)
-        //            {
-        //                GameObject.Instantiate(m_floorTile2, new Vector3(x, 1, y), m_floorTile.transform.rotation, parentCorridor.transform);
-        //            }
-        //        }
-        //    }
-        //}
     }
 }

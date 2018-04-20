@@ -151,7 +151,7 @@ namespace ProceduralGenerationAddOn
                     }
                     else
                     {
-                        CreateDungeon()
+                        m_binarySpacePartition.CreateDungeon();
                     }
                 }
 
