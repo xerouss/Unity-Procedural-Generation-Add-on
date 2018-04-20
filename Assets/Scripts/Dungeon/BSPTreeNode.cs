@@ -390,7 +390,6 @@ namespace ProceduralGenerationAddOn
                     for (int y = m_roomBotBound; y < m_roomTopBound; y++)
                     {
                         m_spawnGrid[x, y] = BinarySpacePartition.roomGridNum;
-                        //GameObject.Instantiate(floor, new Vector3(x, 1, y), floor.transform.rotation, parent.transform);
                     }
                 }
             }
@@ -446,11 +445,6 @@ namespace ProceduralGenerationAddOn
         /// <param name="otherAxisValue">The value for the axis which the corridor is NOT going across</param>
         public void CreateCorridor(int lowerBound, int upperBound, bool xAxis, int otherAxisValue)
         {
-            // Create the parent object to clean the hierarchy up
-            //GameObject parent = new GameObject();
-            //parent.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
-            //parent.name = "Corridor";
-
             int x = 0;
             int y = 0;
 
@@ -465,7 +459,6 @@ namespace ProceduralGenerationAddOn
                 else y = i;
 
                 if (m_spawnGrid[x, y] != BinarySpacePartition.roomGridNum) m_spawnGrid[x, y] = BinarySpacePartition.corridorGridNum;
-                // GameObject.Instantiate(m_floorTile, new Vector3(x, 1, y), m_floorTile.transform.rotation, parent.transform);
             }
         }
     }

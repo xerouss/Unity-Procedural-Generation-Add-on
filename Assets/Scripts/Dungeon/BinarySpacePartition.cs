@@ -96,6 +96,8 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public void InitialiseDungeon()
         {
+            // +2 on both axis to get free space for the walls without going out of bounds
+            // Its +2 instead of +1 since the bot left corner is set to 1,1 so the base is 1
             m_spawnGrid = new int[(int)m_levelSize.x + 2, (int)m_levelSize.y + 2];
         }
 
@@ -110,8 +112,7 @@ namespace ProceduralGenerationAddOn
             BSPTreeNode currentNode;
             // Create the root and add it to the tree
             // TODO: let the user change these values
-            // -1 from the width and height and use 1,1 for the bot left corner to save the surrounding area for walls
-            // This is to prevent out of bounds errors
+            // Bot left corner is set to 1,1 to keep the bot and left parts of the grid free for walls
             m_treeRootNode = new BSPTreeNode(new Vector2(m_levelSize.x / 2, m_levelSize.y / 2), (int)m_levelSize.x, (int)m_levelSize.y, new Vector2(1, 1), m_floorTile, m_floorTile2, m_floorTile3, ref m_spawnGrid);
             splitQueue.Enqueue(m_treeRootNode);
 
@@ -153,7 +154,6 @@ namespace ProceduralGenerationAddOn
         {
             // Go through the gird if there is a room or corridor
             // Check the surroundings for empty spaces, if there is one create a wall there
-            // Have to use level size so it creates the walls for the outer area that isn't used in the rooms
             for (int x = 0; x < m_spawnGrid.GetLength(xAxis); x++)
             {
                 for (int y = 0; y < m_spawnGrid.GetLength(yAxis); y++)
@@ -164,6 +164,10 @@ namespace ProceduralGenerationAddOn
                         WallTileCheck(x - 1, y);
                         WallTileCheck(x, y + 1);
                         WallTileCheck(x, y - 1);
+                        WallTileCheck(x + 1, y + 1);
+                        WallTileCheck(x - 1, y - 1);
+                        WallTileCheck(x - 1, y + 1);
+                        WallTileCheck(x + 1, y - 1);
                     }
                 }
             }
