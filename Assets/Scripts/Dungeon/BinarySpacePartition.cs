@@ -25,7 +25,9 @@ namespace ProceduralGenerationAddOn
         public const int wallGridNum = 3;
         const int xAxis = 0;
         const int yAxis = 1;
-
+        const int getCentre = 2;
+        const int botConerOffsetForWall = 1;
+        const int offsetToPreventOutOfBounds = 2;
         BSPTreeNode m_treeRootNode;
 
         // User variables
@@ -98,7 +100,7 @@ namespace ProceduralGenerationAddOn
         {
             // +2 on both axis to get free space for the walls without going out of bounds
             // Its +2 instead of +1 since the bot left corner is set to 1,1 so the base is 1
-            m_spawnGrid = new int[(int)m_levelSize.x + 2, (int)m_levelSize.y + 2];
+            m_spawnGrid = new int[(int)m_levelSize.x + offsetToPreventOutOfBounds, (int)m_levelSize.y + offsetToPreventOutOfBounds];
         }
 
         /// <summary>
@@ -113,7 +115,9 @@ namespace ProceduralGenerationAddOn
             // Create the root and add it to the tree
             // TODO: let the user change these values
             // Bot left corner is set to 1,1 to keep the bot and left parts of the grid free for walls
-            m_treeRootNode = new BSPTreeNode(new Vector2(m_levelSize.x / 2, m_levelSize.y / 2), (int)m_levelSize.x, (int)m_levelSize.y, new Vector2(1, 1), m_floorTile, m_floorTile2, m_floorTile3, ref m_spawnGrid);
+            // Need to +1 the centre or the child nodes won't line up correctly and won't connect to the root with corridors
+            m_treeRootNode = new BSPTreeNode(new Vector2((m_levelSize.x / getCentre) + botConerOffsetForWall, (m_levelSize.y / getCentre) + botConerOffsetForWall), 
+                (int)m_levelSize.x, (int)m_levelSize.y, new Vector2(botConerOffsetForWall, botConerOffsetForWall), m_floorTile, m_floorTile2, m_floorTile3, ref m_spawnGrid);
             splitQueue.Enqueue(m_treeRootNode);
 
             // For the amount of time the user wants to split the cells
@@ -180,7 +184,7 @@ namespace ProceduralGenerationAddOn
         /// <param name="y">Y Location</param>
         public void WallTileCheck(int x, int y)
         {
-            if(m_spawnGrid[x, y] == emptyGridNum)
+            if (m_spawnGrid[x, y] == emptyGridNum)
             {
                 m_spawnGrid[x, y] = wallGridNum;
             }
@@ -208,6 +212,7 @@ namespace ProceduralGenerationAddOn
             parentWall.transform.SetParent(parentDungeon.transform);
 
             // Go through the gird and based on the number spawn the correct tile
+            // TODO Need to add width/height to the loop increments
             for (int x = 0; x < m_spawnGrid.GetLength(xAxis); x++)
             {
                 for (int y = 0; y < m_spawnGrid.GetLength(yAxis); y++)

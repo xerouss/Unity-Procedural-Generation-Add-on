@@ -40,10 +40,6 @@ namespace ProceduralGenerationAddOn
         GameObject m_floorTile2;
         GameObject m_floorTile3;
         int m_minimumCellSize = 3;
-        int m_roomLeftBound;
-        int m_roomRightBound;
-        int m_roomTopBound;
-        int m_roomBotBound;
         int[,] m_spawnGrid;
         #endregion
 
@@ -111,58 +107,6 @@ namespace ProceduralGenerationAddOn
             set
             {
                 m_minimumCellSize = value;
-            }
-        }
-
-        public int RoomLeftBound
-        {
-            get
-            {
-                return m_roomLeftBound;
-            }
-
-            set
-            {
-                m_roomLeftBound = value;
-            }
-        }
-
-        public int RoomRightBound
-        {
-            get
-            {
-                return m_roomRightBound;
-            }
-
-            set
-            {
-                m_roomRightBound = value;
-            }
-        }
-
-        public int RoomTopBound
-        {
-            get
-            {
-                return m_roomTopBound;
-            }
-
-            set
-            {
-                m_roomTopBound = value;
-            }
-        }
-
-        public int RoomBotBound
-        {
-            get
-            {
-                return m_roomBotBound;
-            }
-
-            set
-            {
-                m_roomBotBound = value;
             }
         }
         #endregion
@@ -324,9 +268,6 @@ namespace ProceduralGenerationAddOn
         public void CreateRoom(int debugNum)
         {
             Debug.Log(debugNum + ": " + m_centre + " | WIDTH: " + m_width + " | HEIGHT: " + m_height);
-            //int roomWidth = Mathf.FloorToInt(m_width / 2);
-            //int roomHeight = Mathf.FloorToInt(m_height / 2);
-            //Debug.Log("ROOMWIDTH: " + roomWidth + " | ROOMHEIGHT: " + roomHeight);
             debugNum++;
 
             // Check if the node has any children since we only create rooms with none
@@ -346,48 +287,22 @@ namespace ProceduralGenerationAddOn
                 int roomWidth = Random.Range(m_minimumCellSize, m_width) / 2;
                 int roomHeight = Random.Range(m_minimumCellSize, m_height) / 2;
 
-                // Create parent object to organise the hierarchy
-                //GameObject parent = new GameObject();
-                //parent.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
-                //parent.name = "Room";
-
-                // TODO Need to add width/height to the loop increments
-                // Spawn the tiles in the room in the scene
-                GameObject floor;
-
-                switch (debugNum)
-                {
-                    case 1:
-                        floor = m_floorTile;
-                        break;
-                    case 2:
-                        floor = m_floorTile2;
-                        break;
-                    case 3:
-                        floor = m_floorTile3;
-                        break;
-                    default:
-                        floor = m_floorTile;
-                        break;
-                }
-
                 // Save the bounds for th output of the room so these can be used when creating the corridors
-                m_roomLeftBound = Mathf.FloorToInt(m_centre.x - roomWidth);
-                m_roomRightBound = (int)m_centre.x + roomWidth;
-                m_roomBotBound = Mathf.FloorToInt(m_centre.y - roomHeight);
-                m_roomTopBound = (int)m_centre.y + roomHeight;
+                int roomLeftBound = Mathf.FloorToInt(m_centre.x - roomWidth);
+                int roomRightBound = (int)m_centre.x + roomWidth;
+                int roomBotBound = Mathf.FloorToInt(m_centre.y - roomHeight);
+                int roomTopBound = (int)m_centre.y + roomHeight;
 
                 // Check if the width/height is odd
                 // If so add 1 to upper to output the correct size
                 // Can't split the value both sides since its an odd number so add the remainder to the end
-                if (m_width % checkIfEvenNumber == oddNumber) m_roomRightBound++;
-                if (m_height % checkIfEvenNumber == oddNumber) m_roomTopBound++;
+                if (m_width % checkIfEvenNumber == oddNumber) roomRightBound++;
+                if (m_height % checkIfEvenNumber == oddNumber) roomTopBound++;
 
-                // Go through room and output
-                // TODO add tile width/height to the increments
-                for (int x = m_roomLeftBound; x < m_roomRightBound; x++)
+                // Add the room to the grid
+                for (int x = roomLeftBound; x < roomRightBound; x++)
                 {
-                    for (int y = m_roomBotBound; y < m_roomTopBound; y++)
+                    for (int y = roomBotBound; y < roomTopBound; y++)
                     {
                         m_spawnGrid[x, y] = BinarySpacePartition.roomGridNum;
                     }
@@ -411,6 +326,9 @@ namespace ProceduralGenerationAddOn
                     m_children[i].CreateCorridorToParent(this);
                 }
             }
+
+            //GameObject centre = new GameObject();
+           // centre.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
 
             // For the parent node since it doesn't have anything to connect to
             if (parent.Centre == Vector2.zero) return;
@@ -458,7 +376,9 @@ namespace ProceduralGenerationAddOn
                 if (xAxis) x = i;
                 else y = i;
 
-                if (m_spawnGrid[x, y] != BinarySpacePartition.roomGridNum) m_spawnGrid[x, y] = BinarySpacePartition.corridorGridNum;
+                // Add the corridor to the grid
+                if (m_spawnGrid[x, y] != BinarySpacePartition.roomGridNum)
+                    m_spawnGrid[x, y] = BinarySpacePartition.corridorGridNum;
             }
         }
     }
