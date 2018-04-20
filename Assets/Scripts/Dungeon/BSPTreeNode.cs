@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   19/04/2018
+//	Last Edited On:	   20/04/2018
 //	File:			   BSPTreeNode.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -40,7 +40,11 @@ namespace ProceduralGenerationAddOn
         GameObject m_floorTile2;
         GameObject m_floorTile3;
         int m_minimumCellSize = 3;
-
+        int m_roomLeftBound;
+        int m_roomRightBound;
+        int m_roomTopBound;
+        int m_roomBotBound;
+        int[,] m_spawnGrid;
         #endregion
 
         #region Properties
@@ -110,6 +114,57 @@ namespace ProceduralGenerationAddOn
             }
         }
 
+        public int RoomLeftBound
+        {
+            get
+            {
+                return m_roomLeftBound;
+            }
+
+            set
+            {
+                m_roomLeftBound = value;
+            }
+        }
+
+        public int RoomRightBound
+        {
+            get
+            {
+                return m_roomRightBound;
+            }
+
+            set
+            {
+                m_roomRightBound = value;
+            }
+        }
+
+        public int RoomTopBound
+        {
+            get
+            {
+                return m_roomTopBound;
+            }
+
+            set
+            {
+                m_roomTopBound = value;
+            }
+        }
+
+        public int RoomBotBound
+        {
+            get
+            {
+                return m_roomBotBound;
+            }
+
+            set
+            {
+                m_roomBotBound = value;
+            }
+        }
         #endregion
 
         /// <summary>
@@ -118,7 +173,7 @@ namespace ProceduralGenerationAddOn
         /// <param name="centre">The centre of the cell</param>
         /// <param name="width">Width of the cell</param>
         /// <param name="height">Height of the cell</param>
-        public BSPTreeNode(Vector2 centre, int width, int height, Vector2 botLeftCorner, GameObject floor, GameObject floor2, GameObject floor3)
+        public BSPTreeNode(Vector2 centre, int width, int height, Vector2 botLeftCorner, GameObject floor, GameObject floor2, GameObject floor3, ref int[,] grid)
         {
             m_children = new List<BSPTreeNode>();
             m_centre = centre;
@@ -128,6 +183,16 @@ namespace ProceduralGenerationAddOn
             m_floorTile2 = floor2;
             m_floorTile3 = floor3;
             m_botLeftCorner = botLeftCorner;
+            m_spawnGrid = grid;
+        }
+
+        public BSPTreeNode(Vector2 centre)
+        {
+            m_children = new List<BSPTreeNode>();
+            m_centre = centre;
+            m_width = 0;
+            m_height = 0;
+            m_botLeftCorner = Vector2.zero;
         }
 
         /// <summary>
@@ -256,7 +321,7 @@ namespace ProceduralGenerationAddOn
             centre.y += m_botLeftCorner.y;
 
             // Create and attach the new cell made
-            BSPTreeNode node = new BSPTreeNode(centre, node1Width, node1Height, m_botLeftCorner, m_floorTile, m_floorTile2, m_floorTile3);
+            BSPTreeNode node = new BSPTreeNode(centre, node1Width, node1Height, m_botLeftCorner, m_floorTile, m_floorTile2, m_floorTile3, ref m_spawnGrid);
             AttachNode(node);
 
             // Create the other node
@@ -282,7 +347,7 @@ namespace ProceduralGenerationAddOn
             centre.y += m_botLeftCorner.y;
 
             // Create and attach the other node
-            node = new BSPTreeNode(centre, node2Width, node2Height, botLeft, m_floorTile, m_floorTile2, m_floorTile3);
+            node = new BSPTreeNode(centre, node2Width, node2Height, botLeft, m_floorTile, m_floorTile2, m_floorTile3, ref m_spawnGrid);
             AttachNode(node);
         }
 
@@ -313,9 +378,11 @@ namespace ProceduralGenerationAddOn
                 // Is divided by 2 so they go across the centre of the room
                 int roomWidth = Random.Range(m_minimumCellSize, m_width) / 2;
                 int roomHeight = Random.Range(m_minimumCellSize, m_height) / 2;
-                GameObject parent = new GameObject();
-                parent.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
-                parent.name = "Room";
+
+                // Create parent object to organise the hierarchy
+                //GameObject parent = new GameObject();
+                //parent.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
+                //parent.name = "Room";
 
                 // TODO Need to add width/height to the loop increments
                 // Spawn the tiles in the room in the scene
@@ -337,23 +404,26 @@ namespace ProceduralGenerationAddOn
                         break;
                 }
 
-                // Get the upper bound of the room
-                int xUpper = (int)m_centre.x + roomWidth;
-                int yUpper = (int)m_centre.y + roomHeight;
+                // Save the bounds for th output of the room so these can be used when creating the corridors
+                m_roomLeftBound = Mathf.FloorToInt(m_centre.x - roomWidth);
+                m_roomRightBound = (int)m_centre.x + roomWidth;
+                m_roomBotBound = Mathf.FloorToInt(m_centre.y - roomHeight);
+                m_roomTopBound = (int)m_centre.y + roomHeight;
 
                 // Check if the width/height is odd
                 // If so add 1 to upper to output the correct size
                 // Can't split the value both sides since its an odd number so add the remainder to the end
-                if (m_width % checkIfEvenNumber == oddNumber) xUpper++;
-                if (m_height % checkIfEvenNumber == oddNumber) yUpper++;
+                if (m_width % checkIfEvenNumber == oddNumber) m_roomRightBound++;
+                if (m_height % checkIfEvenNumber == oddNumber) m_roomTopBound++;
 
                 // Go through room and output
                 // TODO add tile width/height to the increments
-                for (int x = Mathf.FloorToInt(m_centre.x - roomWidth); x < xUpper; x++)
+                for (int x = m_roomLeftBound; x < m_roomRightBound; x++)
                 {
-                    for (int y = Mathf.FloorToInt(m_centre.y - roomHeight); y < yUpper; y++)
+                    for (int y = m_roomBotBound; y < m_roomTopBound; y++)
                     {
-                        GameObject.Instantiate(floor, new Vector3(x, 1, y), floor.transform.rotation, parent.transform);
+                        m_spawnGrid[x, y] = BinarySpacePartition.roomGridNum;
+                        //GameObject.Instantiate(floor, new Vector3(x, 1, y), floor.transform.rotation, parent.transform);
                     }
                 }
             }
@@ -363,7 +433,7 @@ namespace ProceduralGenerationAddOn
         /// Create the corridor to connect to the parent cell
         /// </summary>
         /// <param name="parentCentre">The parent's cell centre</param>
-        public void CreateCorridorToParent(Vector2 parentCentre)
+        public void CreateCorridorToParent(BSPTreeNode parent)
         {
 
             // Check if the node has any children since we want to start with the leaf nodes first
@@ -372,31 +442,31 @@ namespace ProceduralGenerationAddOn
                 // Go through each child and connect them with this node
                 for (int i = 0; i < m_children.Count; i++)
                 {
-                    m_children[i].CreateCorridorToParent(m_centre);
+                    m_children[i].CreateCorridorToParent(this);
                 }
             }
 
             // For the parent node since it doesn't have anything to connect to
-            if (parentCentre == Vector2.zero) return;
+            if (parent.Centre == Vector2.zero) return;
 
             // Based on the parent's position to the current node
             // Spawn the corridor
             // Should only be in 4 straight line directions due to the splitting keeping one axis the same
-            if (m_centre.x < parentCentre.x)
+            if (m_centre.x < parent.Centre.x)
             {
-                SpawnCorridor(Mathf.FloorToInt(m_centre.x), Mathf.FloorToInt(parentCentre.x), true, Mathf.FloorToInt(m_centre.y));
+                SpawnCorridor(Mathf.FloorToInt(m_centre.x), Mathf.FloorToInt(parent.Centre.x), true, Mathf.FloorToInt(m_centre.y));
             }
-            else if (m_centre.x > parentCentre.x)
+            else if (m_centre.x > parent.Centre.x)
             {
-                SpawnCorridor(Mathf.FloorToInt(parentCentre.x), Mathf.FloorToInt(m_centre.x), true, Mathf.FloorToInt(m_centre.y));
+                SpawnCorridor(Mathf.FloorToInt(parent.Centre.x), Mathf.FloorToInt(m_centre.x), true, Mathf.FloorToInt(m_centre.y));
             }
-            else if (m_centre.y < parentCentre.y)
+            else if (m_centre.y < parent.Centre.y)
             {
-                SpawnCorridor(Mathf.FloorToInt(m_centre.y), Mathf.FloorToInt(parentCentre.y), false, Mathf.FloorToInt(m_centre.x));
+                SpawnCorridor(Mathf.FloorToInt(m_centre.y), Mathf.FloorToInt(parent.Centre.y), false, Mathf.FloorToInt(m_centre.x));
             }
             else
             {
-                SpawnCorridor(Mathf.FloorToInt(parentCentre.y), Mathf.FloorToInt(m_centre.y), false, Mathf.FloorToInt(m_centre.x));
+                SpawnCorridor(Mathf.FloorToInt(parent.Centre.y), Mathf.FloorToInt(m_centre.y), false, Mathf.FloorToInt(m_centre.x));
             }
         }
 
@@ -410,9 +480,9 @@ namespace ProceduralGenerationAddOn
         public void SpawnCorridor(int lowerBound, int upperBound, bool xAxis, int otherAxisValue)
         {
             // Create the parent object to clean the hierarchy up
-            GameObject parent = new GameObject();
-            parent.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
-            parent.name = "Corridor";
+            //GameObject parent = new GameObject();
+            //parent.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
+            //parent.name = "Corridor";
 
             int x = 0;
             int y = 0;
@@ -427,9 +497,35 @@ namespace ProceduralGenerationAddOn
                 if (xAxis) x = i;
                 else y = i;
 
-                GameObject.Instantiate(m_floorTile, new Vector3(x, 1, y), m_floorTile.transform.rotation, parent.transform);
+                if (m_spawnGrid[x, y] != BinarySpacePartition.roomGridNum) m_spawnGrid[x, y] = BinarySpacePartition.corridorGridNum;
+                // GameObject.Instantiate(m_floorTile, new Vector3(x, 1, y), m_floorTile.transform.rotation, parent.transform);
             }
         }
-    }
 
+        //public void SpawnDungeon()
+        //{
+        //    GameObject parentCorridor = new GameObject();
+        //    parentCorridor.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
+        //    parentCorridor.name = "Corridor";
+
+        //    GameObject parentRoom = new GameObject();
+        //    parentRoom.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
+        //    parentRoom.name = "Rooms";
+
+        //    for (int x = 0; x < m_width; x++)
+        //    {
+        //        for (int y = 0; y < m_height; y++)
+        //        {
+        //            if(m_spawnGrid[x, y] == roomGridNum)
+        //            {
+        //                GameObject.Instantiate(m_floorTile, new Vector3(x, 1, y), m_floorTile.transform.rotation, parentRoom.transform);
+        //            }
+        //            else if(m_spawnGrid[x, y] == corridorGridNum)
+        //            {
+        //                GameObject.Instantiate(m_floorTile2, new Vector3(x, 1, y), m_floorTile.transform.rotation, parentCorridor.transform);
+        //            }
+        //        }
+        //    }
+        //}
+    }
 }
