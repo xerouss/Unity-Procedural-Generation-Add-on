@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   20/04/2018
+//	Last Edited On:	   22/04/2018
 //	File:			   BSPTreeNode.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -22,7 +22,6 @@ namespace ProceduralGenerationAddOn
 
         const int trueValue = 0;
         const int falseValue = 2;
-        const int splitBound = 3;
         const int getCentre = 2;
         const int checkIfEvenNumber = 2;
         const int oddNumber = 1;
@@ -36,11 +35,9 @@ namespace ProceduralGenerationAddOn
         Vector2 m_botLeftCorner;
         int m_width;
         int m_height;
-        GameObject m_floorTile;
-        GameObject m_floorTile2;
-        GameObject m_floorTile3;
-        int m_minimumCellSize = 3;
+
         int[,] m_spawnGrid;
+        BinarySpacePartition m_binarySpacePartition;
         #endregion
 
         #region Properties
@@ -96,19 +93,6 @@ namespace ProceduralGenerationAddOn
                 m_children = value;
             }
         }
-
-        public int MinimumCellSize
-        {
-            get
-            {
-                return m_minimumCellSize;
-            }
-
-            set
-            {
-                m_minimumCellSize = value;
-            }
-        }
         #endregion
 
         /// <summary>
@@ -117,17 +101,17 @@ namespace ProceduralGenerationAddOn
         /// <param name="centre">The centre of the cell</param>
         /// <param name="width">Width of the cell</param>
         /// <param name="height">Height of the cell</param>
-        public BSPTreeNode(Vector2 centre, int width, int height, Vector2 botLeftCorner, GameObject floor, GameObject floor2, GameObject floor3, ref int[,] grid)
+        public BSPTreeNode(Vector2 centre, int width, int height, Vector2 botLeftCorner, ref int[,] grid, BinarySpacePartition BSP)
         {
             m_children = new List<BSPTreeNode>();
             m_centre = centre;
             m_width = width;
             m_height = height;
-            m_floorTile = floor;
-            m_floorTile2 = floor2;
-            m_floorTile3 = floor3;
             m_botLeftCorner = botLeftCorner;
             m_spawnGrid = grid;
+
+            m_binarySpacePartition = BSP;
+            
         }
 
         public BSPTreeNode(Vector2 centre)
@@ -166,14 +150,14 @@ namespace ProceduralGenerationAddOn
             bool canSplitHorizontally = false;
             bool splitVertically = false;
             int maxSplitBound;
+            int minCellSize = m_binarySpacePartition.MinimumCellSize;
 
             // Check if the cell can be split vertically or horizontally
             // This is to prevent the newly created cells having a width/height smaller than the minimum
-            if (m_width - splitBound > m_minimumCellSize) canSplitVertically = true;
-            if (m_height - splitBound > m_minimumCellSize) canSplitHorizontally = true;
+            if (m_width - minCellSize > minCellSize) canSplitVertically = true;
+            if (m_height - minCellSize > minCellSize) canSplitHorizontally = true;
 
             // Can split either way so randomly chose it
-            // TODO: let the user input the likelihood of the split?
             if (canSplitHorizontally && canSplitVertically)
             {
                 splitVertically = (Random.Range(trueValue, falseValue) == trueValue);
@@ -198,8 +182,7 @@ namespace ProceduralGenerationAddOn
 
             // Get where the split happens
             // The split bound is to prevent very small rooms
-            int splitLocation = Random.Range(splitBound, maxSplitBound - splitBound);
-            Debug.Log("SPLIT LOCATION: " + splitLocation);
+            int splitLocation = Random.Range(minCellSize, maxSplitBound - minCellSize);
 
             if (splitVertically)
             {
@@ -232,7 +215,7 @@ namespace ProceduralGenerationAddOn
             centre.y += m_botLeftCorner.y;
 
             // Create and attach the new cell made
-            BSPTreeNode node = new BSPTreeNode(centre, node1Width, node1Height, m_botLeftCorner, m_floorTile, m_floorTile2, m_floorTile3, ref m_spawnGrid);
+            BSPTreeNode node = new BSPTreeNode(centre, node1Width, node1Height, m_botLeftCorner, ref m_spawnGrid, m_binarySpacePartition);
             AttachNode(node);
 
             // Create the other node
@@ -240,7 +223,7 @@ namespace ProceduralGenerationAddOn
 
             Vector2 botLeft = m_botLeftCorner;
 
-            // Add the offset to the centre based on how the cell was split
+            // Set the right/top side node's centre position
             if (vertically)
             {
                 centre.x += splitPos;
@@ -258,17 +241,15 @@ namespace ProceduralGenerationAddOn
             centre.y += m_botLeftCorner.y;
 
             // Create and attach the other node
-            node = new BSPTreeNode(centre, node2Width, node2Height, botLeft, m_floorTile, m_floorTile2, m_floorTile3, ref m_spawnGrid);
+            node = new BSPTreeNode(centre, node2Width, node2Height, botLeft, ref m_spawnGrid, m_binarySpacePartition);
             AttachNode(node);
         }
 
         /// <summary>
         /// Create the room in the cell
         /// </summary>
-        public void CreateRoom(int debugNum)
+        public void CreateRoom()
         {
-            Debug.Log(debugNum + ": " + m_centre + " | WIDTH: " + m_width + " | HEIGHT: " + m_height);
-            debugNum++;
 
             // Check if the node has any children since we only create rooms with none
             if (m_children.Count > 0)
@@ -276,16 +257,15 @@ namespace ProceduralGenerationAddOn
                 // Go through each child and check them to see if they can create rooms
                 for (int i = 0; i < m_children.Count; i++)
                 {
-                    m_children[i].CreateRoom(debugNum);
+                    m_children[i].CreateRoom();
                 }
             }
             else
             {
-                // TODO Add user input here
                 // Get the width and height of the room
                 // Is divided by 2 so they go across the centre of the room
-                int roomWidth = Random.Range(m_minimumCellSize, m_width) / 2;
-                int roomHeight = Random.Range(m_minimumCellSize, m_height) / 2;
+                int roomWidth = Random.Range(m_binarySpacePartition.MinimumRoomSize, m_width) / 2;
+                int roomHeight = Random.Range(m_binarySpacePartition.MinimumRoomSize, m_height) / 2;
 
                 // Save the bounds for th output of the room so these can be used when creating the corridors
                 int roomLeftBound = Mathf.FloorToInt(m_centre.x - roomWidth);

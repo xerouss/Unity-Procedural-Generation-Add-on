@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   20/04/2018
+//	Last Edited On:	   22/04/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -26,6 +26,7 @@ namespace ProceduralGenerationAddOn
         const int header1TextSize = 30;
         const int header2TextSize = 20;
         const int header3TextSize = 12;
+        const int header4TextSize = 10;
         const int minWindowSize = 480;
         const int dropdownSpaceHeight = 15;
         const int heightmapResLowerBound = 0;
@@ -49,6 +50,7 @@ namespace ProceduralGenerationAddOn
         static GUIStyle m_header1Style;
         static GUIStyle m_header2Style;
         static GUIStyle m_header3Style;
+        static GUIStyle m_header4Style;
         #endregion
         #endregion
 
@@ -95,6 +97,9 @@ namespace ProceduralGenerationAddOn
             m_header3Style = new GUIStyle();
             m_header3Style.fontSize = header3TextSize;
             m_header3Style.fontStyle = FontStyle.Bold;
+
+            m_header4Style = new GUIStyle();
+            m_header4Style.fontSize = header4TextSize;
         }
 
         private void Update()
@@ -141,8 +146,6 @@ namespace ProceduralGenerationAddOn
             {
 
                 // Create a new GameObject that contains the level
-                // TODO: Implement this, does not create a new game object at the moment
-                // STILL NEED WITH THE REALTIME UPDATING?
                 if (GUILayout.Button("Create Level"))
                 {
                     if (m_levelType == (int)LevelTypes.TERRAIN)
@@ -229,7 +232,7 @@ namespace ProceduralGenerationAddOn
             // If the seed field is not selected
             if(GUI.GetNameOfFocusedControl() != "Seed Field")
             {
-                // If the temp seed if different to the actual seed, make them the same
+                // If the temp seed is different to the actual seed, make them the same
                 // This is done when the field is not selected so if the user removes a number it does not produce an error
                 // The if statement is required because the is no reason to change the seed if they are the same
                 if (m_tempSeed != m_perlinNoise.Seed) m_perlinNoise.SetSeedToVariables(m_tempSeed);
@@ -249,17 +252,33 @@ namespace ProceduralGenerationAddOn
             GUILayout.Label("Dungeon", m_header2Style);
             EditorGUILayout.Space();
 
-            m_binarySpacePartition.FloorTile = EditorGUILayout.ObjectField(new GUIContent("Floor Tile: ", "The tile used for the floor of the dungeon"), m_binarySpacePartition.FloorTile, typeof(GameObject), false) as GameObject;
-
-            ///////////////////////////////
-            //TODO REMOVE THIS AFTER DEBUGGING
+            // Size
+            m_binarySpacePartition.DungeonSize = EditorGUILayout.Vector3Field(new GUIContent("Dungeon Size: ", "How large the dungeon will be. Y is used for the position of the roof."), m_binarySpacePartition.DungeonSize);
             EditorGUILayout.Space();
 
-            m_binarySpacePartition.FloorTile2 = EditorGUILayout.ObjectField(new GUIContent("Floor Tile: ", "The tile used for the floor of the dungeon"), m_binarySpacePartition.FloorTile2, typeof(GameObject), false) as GameObject;
+            // Split Variables
+            m_binarySpacePartition.SplitAmount = EditorGUILayout.IntField(new GUIContent("Amount of times to split: ", 
+                "How many times the algorithm will split the dungeon into cells."), m_binarySpacePartition.SplitAmount);
             EditorGUILayout.Space();
 
-            m_binarySpacePartition.FloorTile3 = EditorGUILayout.ObjectField(new GUIContent("Floor Tile: ", "The tile used for the floor of the dungeon"), m_binarySpacePartition.FloorTile3, typeof(GameObject), false) as GameObject;
-            ///////////////////////////////
+            // Minimum Sizes
+            GUILayout.Label("Minimum Sizes", m_header3Style);
+            m_binarySpacePartition.MinimumCellSize = EditorGUILayout.IntField(new GUIContent("Minimum size of cells: ",
+                "Cell = is the area which can be split to create more cells and where the rooms are spawned in. The size of the cell which prevents it from being split. Higher = less likely to get split. High values can cause errors.")
+                , m_binarySpacePartition.MinimumCellSize);
+
+            m_binarySpacePartition.MinimumRoomSize = EditorGUILayout.IntField(new GUIContent("Minimum size of rooms: ",
+                "The minimum size the rooms can be. Make the value 1 or lower if you want dead ends to the corridors."), m_binarySpacePartition.MinimumRoomSize);
+            EditorGUILayout.Space();
+
+            // Tiles
+            GUILayout.Label("Tiles", m_header3Style);
+            GUILayout.Label("The tiles must be 1x1x1 for it to work correctly!", m_header4Style);
+            m_binarySpacePartition.FloorTile = EditorGUILayout.ObjectField(new GUIContent("Floor Tile: ", "The tile used for the floor of the dungeon. The tiles must be 1x1x1 for it to work correctly"), m_binarySpacePartition.FloorTile, typeof(GameObject), false) as GameObject;
+            m_binarySpacePartition.CorridorTile = EditorGUILayout.ObjectField(new GUIContent("Corridor Tile: ", "The tile used for the corridor floor of the dungeon. The tiles must be 1x1x1 for it to work correctly"), m_binarySpacePartition.CorridorTile, typeof(GameObject), false) as GameObject;
+            m_binarySpacePartition.WallTile = EditorGUILayout.ObjectField(new GUIContent("Wall Tile: ", "The tile used for the walls of the dungeon. The tiles must be 1x1x1 for it to work correctly"), m_binarySpacePartition.WallTile, typeof(GameObject), false) as GameObject;
+            m_binarySpacePartition.RoofTile = EditorGUILayout.ObjectField(new GUIContent("Roof Tile: ", "The tile used for the roof of the dungeon.The tiles must be 1x1x1 for it to work correctly"), m_binarySpacePartition.RoofTile, typeof(GameObject), false) as GameObject;
+            EditorGUILayout.Space();
         }
     }
 }
