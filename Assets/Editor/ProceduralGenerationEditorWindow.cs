@@ -274,10 +274,15 @@ namespace ProceduralGenerationAddOn
             // Tiles
             GUILayout.Label("Tiles", m_header3Style);
             GUILayout.Label("The tiles must be 1x1x1 for it to work correctly!", m_header4Style);
-            m_binarySpacePartition.FloorTile = EditorGUILayout.ObjectField(new GUIContent("Floor Tile: ", "The tile used for the floor of the dungeon. The tiles must be 1x1x1 for it to work correctly"), m_binarySpacePartition.FloorTile, typeof(GameObject), false) as GameObject;
-            m_binarySpacePartition.CorridorTile = EditorGUILayout.ObjectField(new GUIContent("Corridor Tile: ", "The tile used for the corridor floor of the dungeon. The tiles must be 1x1x1 for it to work correctly"), m_binarySpacePartition.CorridorTile, typeof(GameObject), false) as GameObject;
-            m_binarySpacePartition.WallTile = EditorGUILayout.ObjectField(new GUIContent("Wall Tile: ", "The tile used for the walls of the dungeon. The tiles must be 1x1x1 for it to work correctly"), m_binarySpacePartition.WallTile, typeof(GameObject), false) as GameObject;
-            m_binarySpacePartition.RoofTile = EditorGUILayout.ObjectField(new GUIContent("Roof Tile: ", "The tile used for the roof of the dungeon.The tiles must be 1x1x1 for it to work correctly"), m_binarySpacePartition.RoofTile, typeof(GameObject), false) as GameObject;
+            m_binarySpacePartition.FloorTile = EditorGUILayout.ObjectField(new GUIContent("Floor Tile: ", "The tile used for the floor of the dungeon. The tiles must be 1x1x1 for it to work correctly."), m_binarySpacePartition.FloorTile, typeof(GameObject), false) as GameObject;
+            m_binarySpacePartition.CorridorTile = EditorGUILayout.ObjectField(new GUIContent("Corridor Tile: ", "The tile used for the corridor floor of the dungeon. The tiles must be 1x1x1 for it to work correctly."), m_binarySpacePartition.CorridorTile, typeof(GameObject), false) as GameObject;
+            m_binarySpacePartition.WallTile = EditorGUILayout.ObjectField(new GUIContent("Wall Tile: ", "The tile used for the walls of the dungeon. The tiles must be 1x1x1 for it to work correctly."), m_binarySpacePartition.WallTile, typeof(GameObject), false) as GameObject;
+            m_binarySpacePartition.SpawnRoof = EditorGUILayout.Toggle(new GUIContent("Spawn dungeon roof?", "Whether to spawn a roof on top of the dungeon or not."), m_binarySpacePartition.SpawnRoof);
+
+            if (m_binarySpacePartition.SpawnRoof)
+            {
+                m_binarySpacePartition.RoofTile = EditorGUILayout.ObjectField(new GUIContent("Roof Tile: ", "The tile used for the roof of the dungeon.The tiles must be 1x1x1 for it to work correctly"), m_binarySpacePartition.RoofTile, typeof(GameObject), false) as GameObject;
+            }
             EditorGUILayout.Space();
         }
     }

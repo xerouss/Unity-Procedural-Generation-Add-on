@@ -32,7 +32,8 @@ namespace ProceduralGenerationAddOn
         const int offsetToPreventOutOfBounds = 2;
 
         // Defaults
-        const int defaultDungeonSize = 20;
+        const int defaultDungeonSizeXZ = 20;
+        const int defaultDungeonSizeY = 5;
         const int defaultSplitAmount = 3;
         const int defaultMinCellSize = 3;
         const int defaultMinRoomSize = 3;
@@ -47,7 +48,7 @@ namespace ProceduralGenerationAddOn
         int[,] m_spawnGrid;
 
         // User Variables
-        Vector3 m_dungeonSize = new Vector3(defaultDungeonSize, defaultDungeonSize, defaultDungeonSize);
+        Vector3 m_dungeonSize = new Vector3(defaultDungeonSizeXZ, defaultDungeonSizeY, defaultDungeonSizeXZ);
         int m_splitAmount = defaultSplitAmount; // Amount of times the grid is divided before the rooms are set
         int m_minimumCellSize = defaultMinCellSize;
         int m_minimumRoomSize = defaultMinRoomSize;
@@ -55,7 +56,7 @@ namespace ProceduralGenerationAddOn
         GameObject m_corridorTile;
         GameObject m_wallTile;
         GameObject m_roofTile;
-
+        bool m_spawnRoof = false;
         #endregion
 
         #region Properties
@@ -175,6 +176,19 @@ namespace ProceduralGenerationAddOn
             set
             {
                 m_minimumRoomSize = value;
+            }
+        }
+
+        public bool SpawnRoof
+        {
+            get
+            {
+                return m_spawnRoof;
+            }
+
+            set
+            {
+                m_spawnRoof = value;
             }
         }
 
@@ -311,27 +325,50 @@ namespace ProceduralGenerationAddOn
             parentWall.name = "Walls";
             parentWall.transform.SetParent(parentDungeon.transform);
 
+            GameObject parentRoof = new GameObject();
+            parentRoof.name = "Roof";
+            parentRoof.transform.SetParent(parentDungeon.transform);
+
             // Go through the gird and based on the number spawn the correct tile
-            // TODO Need to add width/height to the loop increments
             for (int x = 0; x < m_spawnGrid.GetLength(xAxis); x++)
             {
-                for (int y = 0; y < m_spawnGrid.GetLength(yAxis); y++)
+                for (int z = 0; z < m_spawnGrid.GetLength(yAxis); z++)
                 {
-                    switch (m_spawnGrid[x, y])
+                    switch (m_spawnGrid[x, z])
                     {
                         case roomGridNum:
-                            GameObject.Instantiate(m_floorTile, new Vector3(x, 1, y), m_floorTile.transform.rotation, parentRoom.transform);
+                            GameObject.Instantiate(m_floorTile, new Vector3(x, 1, z), m_floorTile.transform.rotation, parentRoom.transform);
+                            SpawnRoofTile(x, z, parentRoof.transform);
                             break;
                         case corridorGridNum:
-                            GameObject.Instantiate(m_corridorTile, new Vector3(x, 1, y), m_corridorTile.transform.rotation, parentCorridor.transform);
+                            GameObject.Instantiate(m_corridorTile, new Vector3(x, 1, z), m_corridorTile.transform.rotation, parentCorridor.transform);
+                            SpawnRoofTile(x, z, parentRoof.transform);
                             break;
                         case wallGridNum:
-                            GameObject.Instantiate(m_wallTile, new Vector3(x, 1, y), m_wallTile.transform.rotation, parentWall.transform);
+                            // Stack up the walls to make the rooms 3D
+                            for (int y = 1; y < m_dungeonSize.y; y++)
+                            {
+                                GameObject.Instantiate(m_wallTile, new Vector3(x, y, z), m_wallTile.transform.rotation, parentWall.transform);
+                            }
                             break;
                         default:
                             break;
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Spawn the roof tile at the position
+        /// </summary>
+        /// <param name="x">X Position</param>
+        /// <param name="z">Z Position</param>
+        /// <param name="parent">The parent to attach the spawned game obejct to</param>
+        public void SpawnRoofTile(int x, int z, Transform parent)
+        {
+            if(m_spawnRoof)
+            {
+                GameObject.Instantiate(m_roofTile, new Vector3(x, m_dungeonSize.y, z), m_corridorTile.transform.rotation, parent);
             }
         }
     }
