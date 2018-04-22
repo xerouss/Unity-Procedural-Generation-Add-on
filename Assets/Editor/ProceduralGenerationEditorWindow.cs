@@ -104,7 +104,7 @@ namespace ProceduralGenerationAddOn
 
         private void Update()
         {
-            if(m_perlinNoise != null && m_realtimeGeneration) m_perlinNoise.SetTerrainData();
+            if (m_perlinNoise != null && m_realtimeGeneration) m_perlinNoise.SetTerrainData();
         }
 
         /// <summary>
@@ -127,9 +127,11 @@ namespace ProceduralGenerationAddOn
             switch (m_levelType)
             {
                 case (int)LevelTypes.TERRAIN:
+                    m_tempSeed = m_perlinNoise.Seed;
                     TerrainGUI();
                     break;
                 case (int)LevelTypes.DUNGEON:
+                    m_tempSeed = m_binarySpacePartition.Seed;
                     DungeonGUI();
                     break;
                 case (int)LevelTypes.NUMOFLEVELTYPES:
@@ -181,6 +183,10 @@ namespace ProceduralGenerationAddOn
                 {
                     m_perlinNoise.ResetVariableValues();
                 }
+                else
+                {
+                    m_binarySpacePartition.ResetVariableValues();
+                }
             }
         }
 
@@ -201,11 +207,11 @@ namespace ProceduralGenerationAddOn
             m_tempSeed = EditorGUILayout.TextField(new GUIContent("Seed: ", "The seed of the current variables values"), m_tempSeed);
 
             // Terrain size
-            m_perlinNoise.TerrainSize = EditorGUILayout.Vector3Field(new GUIContent("Terrain Size:", "X = Width, Y = Higher the spikes in the level are, Z = Depth") , m_perlinNoise.TerrainSize);
+            m_perlinNoise.TerrainSize = EditorGUILayout.Vector3Field(new GUIContent("Terrain Size:", "X = Width, Y = Higher the spikes in the level are, Z = Depth"), m_perlinNoise.TerrainSize);
             EditorGUILayout.Space();
 
             // Heightmap Resolution
-            m_perlinNoise.HeightmapResolution = EditorGUILayout.IntSlider(new GUIContent("Heightmap Resolution: ", "Default = 32"), 
+            m_perlinNoise.HeightmapResolution = EditorGUILayout.IntSlider(new GUIContent("Heightmap Resolution: ", "Default = 32"),
                 m_perlinNoise.HeightmapResolution, heightmapResLowerBound, heightmapResHigherBound);
             EditorGUILayout.Space();
 
@@ -230,12 +236,12 @@ namespace ProceduralGenerationAddOn
             EditorGUILayout.Space();
 
             // If the seed field is not selected
-            if(GUI.GetNameOfFocusedControl() != "Seed Field")
+            if (GUI.GetNameOfFocusedControl() != "Seed Field")
             {
                 // If the temp seed is different to the actual seed, make them the same
                 // This is done when the field is not selected so if the user removes a number it does not produce an error
                 // The if statement is required because the is no reason to change the seed if they are the same
-                if (m_tempSeed != m_perlinNoise.Seed) m_perlinNoise.SetSeedToVariables(m_tempSeed);
+                if (m_tempSeed != m_perlinNoise.Seed) m_perlinNoise.SetVariablesBasedOnSeed(m_tempSeed);
 
                 // Set the variable values to the seed values and set temp seed to the actual see
                 // This is done when the field is not selected because we don't want incorrect numbers appearing on the variables
@@ -252,12 +258,17 @@ namespace ProceduralGenerationAddOn
             GUILayout.Label("Dungeon", m_header2Style);
             EditorGUILayout.Space();
 
+            // Seed
+            GUI.SetNextControlName("Seed Field"); // Set a name for the seed field to check if it's highlighted (look at the end of the function)
+            // Use a temp seed so the seed only changes when the user is not currently editing it/highlighted it
+            m_tempSeed = EditorGUILayout.TextField(new GUIContent("Seed: ", "The seed of the current variables values"), m_tempSeed);
+
             // Size
             m_binarySpacePartition.DungeonSize = EditorGUILayout.Vector3Field(new GUIContent("Dungeon Size: ", "How large the dungeon will be. Y is used for the position of the roof."), m_binarySpacePartition.DungeonSize);
             EditorGUILayout.Space();
 
             // Split Variables
-            m_binarySpacePartition.SplitAmount = EditorGUILayout.IntField(new GUIContent("Amount of times to split: ", 
+            m_binarySpacePartition.SplitAmount = EditorGUILayout.IntField(new GUIContent("Amount of times to split: ",
                 "How many times the algorithm will split the dungeon into cells."), m_binarySpacePartition.SplitAmount);
             EditorGUILayout.Space();
 
@@ -284,6 +295,20 @@ namespace ProceduralGenerationAddOn
                 m_binarySpacePartition.RoofTile = EditorGUILayout.ObjectField(new GUIContent("Roof Tile: ", "The tile used for the roof of the dungeon.The tiles must be 1x1x1 for it to work correctly"), m_binarySpacePartition.RoofTile, typeof(GameObject), false) as GameObject;
             }
             EditorGUILayout.Space();
+
+            // If the seed field is not selected
+            if (GUI.GetNameOfFocusedControl() != "Seed Field")
+            {
+                // If the temp seed is different to the actual seed, make them the same
+                // This is done when the field is not selected so if the user removes a number it does not produce an error
+                // The if statement is required because the is no reason to change the seed if they are the same
+                if (m_tempSeed != m_binarySpacePartition.Seed) m_binarySpacePartition.SetVariablesBasedOnSeed(m_tempSeed);
+
+                // Set the variable values to the seed values and set temp seed to the actual see
+                // This is done when the field is not selected because we don't want incorrect numbers appearing on the variables
+                // When the user is moving around seed values
+                m_tempSeed = m_binarySpacePartition.UpdateSeed();
+            }
         }
     }
 }

@@ -47,6 +47,7 @@ namespace ProceduralGenerationAddOn
         #region Variables
         BSPTreeNode m_treeRootNode;
         int[,] m_spawnGrid;
+        BSPSeed m_seed;
 
         // User Variables
         Vector3 m_dungeonSize = new Vector3(defaultDungeonSizeXZ, defaultDungeonSizeY, defaultDungeonSizeXZ);
@@ -72,6 +73,31 @@ namespace ProceduralGenerationAddOn
             set
             {
                 m_dungeonSize = value;
+            }
+        }
+
+        // Need individual property for the x and y since they can't be set individually from the vector 3 one
+        public float DungeonSizeX
+        {
+            set
+            {
+                m_dungeonSize.x = value;
+            }
+        }
+
+        public float DungeonSizeY
+        {
+            set
+            {
+                m_dungeonSize.y = value;
+            }
+        }
+
+        public float DungeonSizeZ
+        {
+            set
+            {
+                m_dungeonSize.z = value;
             }
         }
 
@@ -193,6 +219,55 @@ namespace ProceduralGenerationAddOn
             }
         }
 
+        public string Seed
+        {
+            get
+            {
+                return m_seed.Seed;
+            }
+        }
+        #endregion
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public BinarySpacePartition()
+        {
+            m_seed = new BSPSeed(this);
+            m_seed.UpdateSeed();
+        }
+
+        /// <summary>
+        /// Reset all variables the user can change back to their defaults
+        /// </summary>
+        public void ResetVariableValues()
+        {
+            m_dungeonSize = new Vector3(defaultDungeonSizeXZ, defaultDungeonSizeY, defaultDungeonSizeXZ);
+            m_splitAmount = defaultSplitAmount;
+            m_minimumCellSize = defaultMinCellSize;
+            m_minimumRoomSize = defaultMinRoomSize;
+        }
+
+        #region Seed functions
+
+        /// <summary>
+        /// Update the seed value
+        /// </summary>
+        /// <returns>The new seed value</returns>
+        public string UpdateSeed()
+        {
+            return m_seed.UpdateSeed();
+        }
+
+        /// <summary>
+        /// Set the user variables based on the seed
+        /// </summary>
+        /// <param name="newSeed">The new seed</param>
+        public void SetVariablesBasedOnSeed(string newSeed)
+        {
+            m_seed.SetSeedToVariables(newSeed);
+        }
+
         #endregion
 
         /// <summary>
@@ -306,6 +381,13 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public void OutputDungeon()
         {
+            // Check if the user has inputted the tiles or not
+            if(m_floorTile == null || m_corridorTile == null || m_wallTile == null)
+            {
+                Debug.Log("** MISSING TILE **| Please input the desired tiles in the tile fields.");
+                return;
+            }
+
             // Create parents to organise the hierarchy
             GameObject parentDungeon = new GameObject();
             parentDungeon.name = "Dungeon";
