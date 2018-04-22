@@ -30,6 +30,7 @@ namespace ProceduralGenerationAddOn
         const int getCentre = 2;
         const int botConerOffsetForWall = 1;
         const int offsetToPreventOutOfBounds = 2;
+        const int ySpawningPos = 1;
 
         // Defaults
         const int defaultDungeonSizeXZ = 20;
@@ -282,10 +283,6 @@ namespace ProceduralGenerationAddOn
                         WallTileCheck(x - 1, y);
                         WallTileCheck(x, y + 1);
                         WallTileCheck(x, y - 1);
-                        WallTileCheck(x + 1, y + 1);
-                        WallTileCheck(x - 1, y - 1);
-                        WallTileCheck(x - 1, y + 1);
-                        WallTileCheck(x + 1, y - 1);
                     }
                 }
             }
@@ -337,11 +334,11 @@ namespace ProceduralGenerationAddOn
                     switch (m_spawnGrid[x, z])
                     {
                         case roomGridNum:
-                            GameObject.Instantiate(m_floorTile, new Vector3(x, 1, z), m_floorTile.transform.rotation, parentRoom.transform);
+                            GameObject.Instantiate(m_floorTile, new Vector3(x, ySpawningPos, z), m_floorTile.transform.rotation, parentRoom.transform);
                             SpawnRoofTile(x, z, parentRoof.transform);
                             break;
                         case corridorGridNum:
-                            GameObject.Instantiate(m_corridorTile, new Vector3(x, 1, z), m_corridorTile.transform.rotation, parentCorridor.transform);
+                            GameObject.Instantiate(m_corridorTile, new Vector3(x, ySpawningPos, z), m_corridorTile.transform.rotation, parentCorridor.transform);
                             SpawnRoofTile(x, z, parentRoof.transform);
                             break;
                         case wallGridNum:
