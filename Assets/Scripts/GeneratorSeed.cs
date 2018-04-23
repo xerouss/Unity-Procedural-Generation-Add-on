@@ -21,14 +21,11 @@ namespace ProceduralGenerationAddOn
 	public class GeneratorSeed
 	{
 		#region Constants
-
 		const int makeBase0 = 1;
 		const int goToNextVariable = 1;
-
 		#endregion
 
 		#region Variables
-
 		string m_seed = "0";
         protected int m_numOfVariablesUserCanChange;
         #endregion
@@ -145,7 +142,8 @@ namespace ProceduralGenerationAddOn
 		/// <returns>Variable value</returns>
 		public virtual float GetUserVariable(int index)
 		{
-			return 0;
+            // Will be filled in by the classes which inherit from this class
+            return 0;
 		}
 
 		/// <summary>
@@ -155,7 +153,7 @@ namespace ProceduralGenerationAddOn
 		/// <param name="value">The new value</param>
 		public virtual void SetUserVariable(int index, float value)
 		{
-
-		}
-	}
+            // Will be filled in by the classes which inherit from this class
+        }
+    }
 }

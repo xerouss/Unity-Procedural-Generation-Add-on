@@ -19,15 +19,11 @@ namespace ProceduralGenerationAddOn
     public class BSPSeed : GeneratorSeed
     {
         #region Constants
-
         const int numOfVariables = 6;
-
         #endregion
 
         #region Variables
-
         BinarySpacePartition m_binarySpacePartition;
-
         #endregion
 
         /// <summary>

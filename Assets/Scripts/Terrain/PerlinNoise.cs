@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   22/04/2018
+//	Last Edited On:	   23/04/2018
 //	File:			   PerlinNoise.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -102,7 +102,7 @@ namespace ProceduralGenerationAddOn
 
 		// The terrain data used when creating the terrain
 		TerrainData m_terrainData;
-        PerlinNoiseSeed m_seed;
+		PerlinNoiseSeed m_seed;
 
 		// Variables the user can change
 		Vector3 m_terrainSize = new Vector3(defaultTerrainXSize, defaultTerrainYSize, defaultTerrainZSize);
@@ -318,19 +318,27 @@ namespace ProceduralGenerationAddOn
 			}
 		}
 
-        public string Seed
-        {
-            get
-            {
-                return m_seed.Seed;
-            }
-        }
-        #endregion
+		public PerlinNoiseSeed SeedClass
+		{
+			get
+			{
+				return m_seed;
+			}
+		}
 
-        /// <summary>
-        /// Reset all variables the user can change back to their defaults
-        /// </summary>
-        public void ResetVariableValues()
+		public string SeedValue
+		{
+			get
+			{
+				return m_seed.Seed;
+			}
+		}
+		#endregion
+
+		/// <summary>
+		/// Reset all variables the user can change back to their defaults
+		/// </summary>
+		public void ResetVariableValues()
 		{
 			m_terrainSize = new Vector3(defaultTerrainXSize, defaultTerrainYSize, defaultTerrainZSize);
 			m_posOffset = new Vector2(defaultXOffset, defaultYOffset);
@@ -345,41 +353,40 @@ namespace ProceduralGenerationAddOn
 			m_lacunarity = defaultLacunarity;
 		}
 
-        #region Seed functions
+		#region Seed functions
 
-        /// <summary>
-        /// Update the seed value
-        /// </summary>
-        /// <returns>The new seed value</returns>
-        public string UpdateSeed()
-        {
-            return m_seed.UpdateSeed();
-        }
+		/// <summary>
+		/// Update the seed value
+		/// </summary>
+		/// <returns>The new seed value</returns>
+		public string UpdateSeed()
+		{
+			return m_seed.UpdateSeed();
+		}
 
-        /// <summary>
-        /// Set the user variables based on the seed
-        /// </summary>
-        /// <param name="newSeed">The new seed</param>
-        public void SetVariablesBasedOnSeed(string newSeed)
-        {
-            m_seed.SetSeedToVariables(newSeed);
-        }
+		/// <summary>
+		/// Set the user variables based on the seed
+		/// </summary>
+		/// <param name="newSeed">The new seed</param>
+		public void SetVariablesBasedOnSeed(string newSeed)
+		{
+			m_seed.SetSeedToVariables(newSeed);
+		}
 
-        #endregion
+		#endregion
 
-        #region Perlin Noise Functions
+		#region Perlin Noise Functions
 
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="permutationSize">The size of the permutation grid</param>
-        public PerlinNoise(int permutationSize)
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		public PerlinNoise()
 		{
 			m_terrainData = new TerrainData();
 			m_terrainData.SetDetailResolution(terrainRes, terrainResPerBatch);
 			m_terrainData.baseMapResolution = terrainRes;
 
-            m_seed = new PerlinNoiseSeed(this);
+			m_seed = new PerlinNoiseSeed(this);
 			m_seed.UpdateSeed();
 		}
 

@@ -19,15 +19,11 @@ namespace ProceduralGenerationAddOn
 	public class PerlinNoiseSeed: GeneratorSeed
 	{
         #region Constants
-
         const int numOfVariables = 14;
-
         #endregion
 
         #region Variables
-
         PerlinNoise m_perlinNoise;
-
 		#endregion
 
 		/// <summary>

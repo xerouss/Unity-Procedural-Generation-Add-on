@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   22/04/2018
+//	Last Edited On:	   23/04/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -20,8 +20,6 @@ namespace ProceduralGenerationAddOn
     public class ProceduralGenerationEditorWindow : EditorWindow
     {
 
-        #region Variables
-
         #region Constants
         const int header1TextSize = 30;
         const int header2TextSize = 20;
@@ -29,8 +27,6 @@ namespace ProceduralGenerationAddOn
         const int header4TextSize = 10;
         const int minWindowSize = 480;
         const int dropdownSpaceHeight = 15;
-        const int heightmapResLowerBound = 0;
-        const int heightmapResHigherBound = 512;
         #endregion
 
         #region Private
@@ -39,12 +35,15 @@ namespace ProceduralGenerationAddOn
             TERRAIN, DUNGEON, NUMOFLEVELTYPES
         }
 
+        #region Variables
         int m_levelType = 0;
         bool m_realtimeGeneration = false;
         string[] m_levelTypeOptions = { "Terrain", "Dungeon" };
-        static string m_tempSeed;
+        ProceduralGenerationAlgorithmGUI m_gui;
         static PerlinNoise m_perlinNoise;
+        static PerlinNoiseGUI m_perlinNoiseGUI;
         static BinarySpacePartition m_binarySpacePartition;
+        static BinarySpacePartitionGUI m_binarySpacePartitionGUI;
 
         #region Style Variables
         static GUIStyle m_header1Style;
@@ -66,6 +65,7 @@ namespace ProceduralGenerationAddOn
         {
             // Create the editor window
             EditorWindow procGenWindow = EditorWindow.GetWindow(typeof(ProceduralGenerationEditorWindow));
+
             // The min size the window can be
             // This is so the window shows the header text when it is created
             procGenWindow.minSize = new Vector2(minWindowSize, minWindowSize);
@@ -73,12 +73,16 @@ namespace ProceduralGenerationAddOn
             // Create the styles for the window
             CreateStyles();
 
-            // Create the perlin noise so it can be used
-            m_perlinNoise = new PerlinNoise(256 * 2);
+            // Create the perlin noise and GUI for it
+            m_perlinNoise = new PerlinNoise();
+            m_perlinNoiseGUI = new PerlinNoiseGUI(m_perlinNoise.SeedClass, m_perlinNoise,
+                m_header2Style, m_header3Style, m_header4Style);
 
-            m_tempSeed = m_perlinNoise.Seed;
-
+            // Create the binary space partition and GUI for it
             m_binarySpacePartition = new BinarySpacePartition();
+            m_binarySpacePartitionGUI = new BinarySpacePartitionGUI(m_binarySpacePartition.SeedClass, m_binarySpacePartition,
+                m_header2Style, m_header3Style, m_header4Style);
+
         }
 
         /// <summary>
@@ -102,9 +106,12 @@ namespace ProceduralGenerationAddOn
             m_header4Style.fontSize = header4TextSize;
         }
 
+        /// <summary>
+        /// The perlin noise auto update if it's enabled
+        /// </summary>
         private void Update()
         {
-            if (m_perlinNoise != null && m_realtimeGeneration) m_perlinNoise.SetTerrainData();
+            if (m_perlinNoise != null && m_realtimeGeneration) m_gui.CreateLevel();
         }
 
         /// <summary>
@@ -127,188 +134,46 @@ namespace ProceduralGenerationAddOn
             switch (m_levelType)
             {
                 case (int)LevelTypes.TERRAIN:
-                    m_tempSeed = m_perlinNoise.Seed;
-                    TerrainGUI();
+                    m_gui = m_perlinNoiseGUI;
                     break;
                 case (int)LevelTypes.DUNGEON:
-                    m_tempSeed = m_binarySpacePartition.Seed;
-                    DungeonGUI();
+                    m_gui = m_binarySpacePartitionGUI;
+                    m_realtimeGeneration = false; // Dungeon does not have real-time generation
                     break;
-                case (int)LevelTypes.NUMOFLEVELTYPES:
                 default:
                     Debug.Log("ERROR: UNKOWN LEVEL TYPE");
                     break;
             }
 
+            // Display the selected level type's GUI
+            m_gui.DisplayGUI();
+
             // If the user wants to update the terrain as they change it
-            m_realtimeGeneration = EditorGUILayout.Toggle(new GUIContent("Real-time Generation: ", "Update the terrain as you change it. Turn off for large terrains as it may cause problems"), m_realtimeGeneration);
+            // Only works for the terrain since real-time generation can't be done on the BSP
+            // Since the outcome is random
+            if(m_levelType == (int)LevelTypes.TERRAIN)
+                m_realtimeGeneration = EditorGUILayout.Toggle(new GUIContent("Real-time Generation: ", 
+                    "Update the terrain as you change it. Turn off for large terrains as it may cause problems"), m_realtimeGeneration);
 
             // Don't need the button if the terrain is being auto updated
             if (!m_realtimeGeneration)
             {
-
                 // Create a new GameObject that contains the level
                 if (GUILayout.Button("Create Level"))
-                {
-                    if (m_levelType == (int)LevelTypes.TERRAIN)
-                    {
-                        m_perlinNoise.SetTerrainData();
-                    }
-                    else
-                    {
-                        m_binarySpacePartition.CreateDungeon();
-                    }
-                }
+                    m_gui.CreateLevel();
 
                 // Create the level using the existing GameObject
                 if (GUILayout.Button("Re-create Level"))
-                {
-                    if (m_levelType == (int)LevelTypes.TERRAIN)
-                    {
-                        m_perlinNoise.SetTerrainData();
-                    }
-                }
+                    m_gui.ReCreateLevel();
 
                 // Delete the level's GameObject
                 if (GUILayout.Button("Delete Level"))
-                {
-                    DestroyImmediate(GameObject.FindObjectOfType<Terrain>().gameObject);
-                }
+                    m_gui.DeleteLevel();
             }
 
             // Reset all variables to the default values
             if (GUILayout.Button("Reset Variables"))
-            {
-                if (m_levelType == (int)LevelTypes.TERRAIN)
-                {
-                    m_perlinNoise.ResetVariableValues();
-                }
-                else
-                {
-                    m_binarySpacePartition.ResetVariableValues();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Variables for the terrain generation
-        /// </summary>
-        void TerrainGUI()
-        {
-            // TODO: Improve descriptions
-
-            // Header
-            GUILayout.Label("Terrain", m_header2Style);
-            EditorGUILayout.Space();
-
-            // Seed
-            GUI.SetNextControlName("Seed Field"); // Set a name for the seed field to check if it's highlighted (look at the end of the function)
-            // Use a temp seed so the seed only changes when the user is not currently editing it/highlighted it
-            m_tempSeed = EditorGUILayout.TextField(new GUIContent("Seed: ", "The seed of the current variables values"), m_tempSeed);
-
-            // Terrain size
-            m_perlinNoise.TerrainSize = EditorGUILayout.Vector3Field(new GUIContent("Terrain Size:", "X = Width, Y = Higher the spikes in the level are, Z = Depth"), m_perlinNoise.TerrainSize);
-            EditorGUILayout.Space();
-
-            // Heightmap Resolution
-            m_perlinNoise.HeightmapResolution = EditorGUILayout.IntSlider(new GUIContent("Heightmap Resolution: ", "Default = 32"),
-                m_perlinNoise.HeightmapResolution, heightmapResLowerBound, heightmapResHigherBound);
-            EditorGUILayout.Space();
-
-            // Offset
-            m_perlinNoise.PosOffset = EditorGUILayout.Vector2Field(new GUIContent("Position Offset: ", "Change the position of the perlin noise"), m_perlinNoise.PosOffset);
-            EditorGUILayout.Space();
-
-            //// Fade Change
-            GUILayout.Label("Fade Change", m_header3Style);
-            m_perlinNoise.MultiplyFade = EditorGUILayout.IntField(new GUIContent("Multiply Value: ", "Default = 6"), m_perlinNoise.MultiplyFade);
-            m_perlinNoise.MinusFade = EditorGUILayout.IntField(new GUIContent("Minus Value: ", "Default = 15"), m_perlinNoise.MinusFade);
-            m_perlinNoise.AdditionFade = EditorGUILayout.IntField(new GUIContent("Addition Value: ", "Default = 10"), m_perlinNoise.AdditionFade);
-            EditorGUILayout.Space();
-
-            // Fractal
-            GUILayout.Label("Fractal Brownian Motion", m_header3Style);
-            m_perlinNoise.Octaves = EditorGUILayout.FloatField(new GUIContent("Octaves: ", "Amount of times it iterates. More = more detail"), m_perlinNoise.Octaves);
-            m_perlinNoise.Frequency = EditorGUILayout.FloatField(new GUIContent("Frequency: ", "How much the bumps are spread out. Lower = flatter"), m_perlinNoise.Frequency);
-            m_perlinNoise.Amplitude = EditorGUILayout.FloatField(new GUIContent("Amplitude: ", "How flat/tall it is"), m_perlinNoise.Amplitude);
-            m_perlinNoise.AmplitudeGain = EditorGUILayout.FloatField(new GUIContent("Amplitude Gain: ", "How much the amplitude increases after each iteration"), m_perlinNoise.AmplitudeGain);
-            m_perlinNoise.Lacunarity = EditorGUILayout.FloatField(new GUIContent("Lacunarity: ", "How much the frequency is increased after each iteration"), m_perlinNoise.Lacunarity);
-            EditorGUILayout.Space();
-
-            // If the seed field is not selected
-            if (GUI.GetNameOfFocusedControl() != "Seed Field")
-            {
-                // If the temp seed is different to the actual seed, make them the same
-                // This is done when the field is not selected so if the user removes a number it does not produce an error
-                // The if statement is required because the is no reason to change the seed if they are the same
-                if (m_tempSeed != m_perlinNoise.Seed) m_perlinNoise.SetVariablesBasedOnSeed(m_tempSeed);
-
-                // Set the variable values to the seed values and set temp seed to the actual see
-                // This is done when the field is not selected because we don't want incorrect numbers appearing on the variables
-                // When the user is moving around seed values
-                m_tempSeed = m_perlinNoise.UpdateSeed();
-            }
-        }
-
-        /// <summary>
-        /// Variables for the dungeon generation
-        /// </summary>
-        void DungeonGUI()
-        {
-            GUILayout.Label("Dungeon", m_header2Style);
-            EditorGUILayout.Space();
-
-            // Seed
-            GUI.SetNextControlName("Seed Field"); // Set a name for the seed field to check if it's highlighted (look at the end of the function)
-            // Use a temp seed so the seed only changes when the user is not currently editing it/highlighted it
-            m_tempSeed = EditorGUILayout.TextField(new GUIContent("Seed: ", "The seed of the current variables values"), m_tempSeed);
-
-            // Size
-            m_binarySpacePartition.DungeonSize = EditorGUILayout.Vector3Field(new GUIContent("Dungeon Size: ", "How large the dungeon will be. Y is used for the position of the roof."), m_binarySpacePartition.DungeonSize);
-            EditorGUILayout.Space();
-
-            // Split Variables
-            m_binarySpacePartition.SplitAmount = EditorGUILayout.IntField(new GUIContent("Amount of times to split: ",
-                "How many times the algorithm will split the dungeon into cells."), m_binarySpacePartition.SplitAmount);
-            EditorGUILayout.Space();
-
-            // Minimum Sizes
-            GUILayout.Label("Minimum Sizes", m_header3Style);
-            m_binarySpacePartition.MinimumCellSize = EditorGUILayout.IntField(new GUIContent("Minimum size of cells: ",
-                "Cell = is the area which can be split to create more cells and where the rooms are spawned in. The size of the cell which prevents it from being split. Higher = less likely to get split. High values can cause errors.")
-                , m_binarySpacePartition.MinimumCellSize);
-
-            m_binarySpacePartition.MinimumRoomSize = EditorGUILayout.IntField(new GUIContent("Minimum size of rooms: ",
-                "The minimum size the rooms can be. Make the value 1 or lower if you want dead ends to the corridors."), m_binarySpacePartition.MinimumRoomSize);
-            EditorGUILayout.Space();
-
-            // Tiles
-            GUILayout.Label("Tiles", m_header3Style);
-            GUILayout.Label("The tiles must be 1x1x1 for it to work correctly!", m_header4Style);
-            m_binarySpacePartition.FloorTile = EditorGUILayout.ObjectField(new GUIContent("Floor Tile: ", "The tile used for the floor of the dungeon. The tiles must be 1x1x1 for it to work correctly."), m_binarySpacePartition.FloorTile, typeof(GameObject), false) as GameObject;
-            m_binarySpacePartition.CorridorTile = EditorGUILayout.ObjectField(new GUIContent("Corridor Tile: ", "The tile used for the corridor floor of the dungeon. The tiles must be 1x1x1 for it to work correctly."), m_binarySpacePartition.CorridorTile, typeof(GameObject), false) as GameObject;
-            m_binarySpacePartition.WallTile = EditorGUILayout.ObjectField(new GUIContent("Wall Tile: ", "The tile used for the walls of the dungeon. The tiles must be 1x1x1 for it to work correctly."), m_binarySpacePartition.WallTile, typeof(GameObject), false) as GameObject;
-            m_binarySpacePartition.SpawnRoof = EditorGUILayout.Toggle(new GUIContent("Spawn dungeon roof?", "Whether to spawn a roof on top of the dungeon or not."), m_binarySpacePartition.SpawnRoof);
-
-            if (m_binarySpacePartition.SpawnRoof)
-            {
-                m_binarySpacePartition.RoofTile = EditorGUILayout.ObjectField(new GUIContent("Roof Tile: ", "The tile used for the roof of the dungeon.The tiles must be 1x1x1 for it to work correctly"), m_binarySpacePartition.RoofTile, typeof(GameObject), false) as GameObject;
-            }
-            EditorGUILayout.Space();
-
-            // If the seed field is not selected
-            if (GUI.GetNameOfFocusedControl() != "Seed Field")
-            {
-                // If the temp seed is different to the actual seed, make them the same
-                // This is done when the field is not selected so if the user removes a number it does not produce an error
-                // The if statement is required because the is no reason to change the seed if they are the same
-                if (m_tempSeed != m_binarySpacePartition.Seed) m_binarySpacePartition.SetVariablesBasedOnSeed(m_tempSeed);
-
-                // Set the variable values to the seed values and set temp seed to the actual see
-                // This is done when the field is not selected because we don't want incorrect numbers appearing on the variables
-                // When the user is moving around seed values
-                m_tempSeed = m_binarySpacePartition.UpdateSeed();
-            }
+                m_gui.ResetVariablesForLevel();
         }
     }
 }

@@ -219,7 +219,15 @@ namespace ProceduralGenerationAddOn
             }
         }
 
-        public string Seed
+        public BSPSeed SeedClass
+        {
+            get
+            {
+                return m_seed;
+            }
+        }
+
+        public string SeedValue
         {
             get
             {
