@@ -27,11 +27,11 @@ namespace ProceduralGenerationAddOn
 
 		#region Variables
 		string m_seed = "0";
-        protected int m_numOfVariablesUserCanChange;
-        #endregion
+		protected int m_numOfVariablesUserCanChange;
+		#endregion
 
-        #region Properties
-        public string Seed
+		#region Properties
+		public string Seed
 		{
 			get
 			{
@@ -81,7 +81,7 @@ namespace ProceduralGenerationAddOn
 			string valueString = newSeed;
 
 			// Go through all variables the user can change
-            // TODO why -1???
+			// TODO why -1???
 			for (int i = m_numOfVariablesUserCanChange - 1; i >= 0; i--)
 			{
 				// Find where the variable value gets cut off
@@ -142,8 +142,8 @@ namespace ProceduralGenerationAddOn
 		/// <returns>Variable value</returns>
 		public virtual float GetUserVariable(int index)
 		{
-            // Will be filled in by the classes which inherit from this class
-            return 0;
+			// Will be filled in by the classes which inherit from this class
+			return 0;
 		}
 
 		/// <summary>
@@ -153,7 +153,7 @@ namespace ProceduralGenerationAddOn
 		/// <param name="value">The new value</param>
 		public virtual void SetUserVariable(int index, float value)
 		{
-            // Will be filled in by the classes which inherit from this class
-        }
-    }
+			// Will be filled in by the classes which inherit from this class
+		}
+	}
 }

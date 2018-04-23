@@ -9,7 +9,7 @@
 // Libraries and namespaces
 using UnityEngine;
 using UnityEditor;
-using System;
+
 ////////////////////////////////////////////
 
 /// <summary>
@@ -65,7 +65,6 @@ namespace ProceduralGenerationAddOn
             m_header2Style = header2;
             m_header3Style = header3;
             m_header4Style = header4;
-
             m_seed = seed;
             m_tempSeed = m_seed.Seed;
             m_headerTitle = headerTitle;
@@ -76,29 +75,37 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public virtual void DisplayGUI()
         {
+            string fieldText;
+            string tooltip;
+
             // Header
             GUILayout.Label(m_headerTitle, m_header2Style);
             EditorGUILayout.Space();
 
-            // If the algorithm can have realtime generation, allow the user to switch it on/off
+            // If the algorithm can have real-time generation, allow the user to switch it on/off
             if (m_allowRealTimeGeneration)
-                m_realTimeGenerationActive = EditorGUILayout.Toggle(new GUIContent("Real-time Generation: ",
-                   "Update the terrain as you change it. Turn off for large levels as it may cause problems"), m_realTimeGenerationActive);
+            {
+                fieldText = "Real-time Generation: ";
+                tooltip = "Update the terrain as you change it. Turn off for large levels as it may cause problems";
+                m_realTimeGenerationActive = EditorGUILayout.Toggle(new GUIContent(fieldText, tooltip), m_realTimeGenerationActive);
+            }
 
-            // Seed
+            // Seed            
+            fieldText = "Seed: ";
+            tooltip = "The seed of the current variables values";
             GUI.SetNextControlName("Seed Field"); // Set a name for the seed field to check if it's highlighted (look at the end of the function)
-            // Use a temp seed so the seed only changes when the user is not currently editing it/highlighted it
-            m_tempSeed = EditorGUILayout.TextField(new GUIContent("Seed: ", "The seed of the current variables values"), m_tempSeed);
+                                                  // Use a temp seed so the seed only changes when the user is not currently editing it/highlighted it
+            m_tempSeed = EditorGUILayout.TextField(new GUIContent(fieldText, tooltip), m_tempSeed);
 
             // If the seed field is not selected
             if (GUI.GetNameOfFocusedControl() != "Seed Field")
             {
                 // If the temp seed is different to the actual seed, make them the same
                 // This is done when the field is not selected so if the user removes a number it does not produce an error
-                // The if statement is required because the is no reason to change the seed if they are the same
+                // The if statement is required because there is no reason to change the seed if they are the same
                 if (m_tempSeed != m_seed.Seed) m_seed.SetSeedToVariables(m_tempSeed);
 
-                // Set the variable values to the seed values and set temp seed to the actual see
+                // Set the variable values to the seed values and set temp seed to the actual seed
                 // This is done when the field is not selected because we don't want incorrect numbers appearing on the variables
                 // When the user is moving around seed values
                 m_tempSeed = m_seed.UpdateSeed();

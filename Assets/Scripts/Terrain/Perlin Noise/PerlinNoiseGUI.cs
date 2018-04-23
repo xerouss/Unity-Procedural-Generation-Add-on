@@ -52,34 +52,71 @@ namespace ProceduralGenerationAddOn
             // TODO: Improve descriptions
             base.DisplayGUI();
 
+            string fieldText;
+            string tooltip;
+
             // Terrain size
-            m_perlinNoise.TerrainSize = EditorGUILayout.Vector3Field(new GUIContent("Terrain Size:", "X = Width, Y = Higher the spikes in the level are, Z = Depth"), m_perlinNoise.TerrainSize);
+            fieldText = "Terrain Size:";
+            tooltip = "X = Width, Y = Higher the spikes in the level are, Z = Depth";
+            m_perlinNoise.TerrainSize = EditorGUILayout.Vector3Field(new GUIContent(fieldText, tooltip), m_perlinNoise.TerrainSize);
             EditorGUILayout.Space();
 
             // Heightmap Resolution
-            m_perlinNoise.HeightmapResolution = EditorGUILayout.IntSlider(new GUIContent("Heightmap Resolution: ", "Default = 32"),
+            fieldText = "Heightmap Resolution: ";
+            tooltip = "Default = 32";
+            m_perlinNoise.HeightmapResolution = EditorGUILayout.IntSlider(new GUIContent(fieldText, tooltip),
                 m_perlinNoise.HeightmapResolution, heightmapResLowerBound, heightmapResHigherBound);
             EditorGUILayout.Space();
 
             // Offset
-            m_perlinNoise.PosOffset = EditorGUILayout.Vector2Field(new GUIContent("Position Offset: ", "Change the position of the perlin noise"), m_perlinNoise.PosOffset);
+            fieldText = "Position Offset: ";
+            tooltip = "Change the position of the perlin noise";
+            m_perlinNoise.PosOffset = EditorGUILayout.Vector2Field(new GUIContent(fieldText, tooltip), m_perlinNoise.PosOffset);
             EditorGUILayout.Space();
 
+            // *************************************************
             //// Fade Change
             GUILayout.Label("Fade Change", m_header3Style);
-            m_perlinNoise.MultiplyFade = EditorGUILayout.IntField(new GUIContent("Multiply Value: ", "Default = 6"), m_perlinNoise.MultiplyFade);
-            m_perlinNoise.MinusFade = EditorGUILayout.IntField(new GUIContent("Minus Value: ", "Default = 15"), m_perlinNoise.MinusFade);
-            m_perlinNoise.AdditionFade = EditorGUILayout.IntField(new GUIContent("Addition Value: ", "Default = 10"), m_perlinNoise.AdditionFade);
-            EditorGUILayout.Space();
 
+            fieldText = "Multiply Value: ";
+            tooltip = "Default = 6";
+            m_perlinNoise.MultiplyFade = EditorGUILayout.IntField(new GUIContent(fieldText, tooltip), m_perlinNoise.MultiplyFade);
+
+            fieldText = "Minus Value: ";
+            tooltip = "Default = 15";
+            m_perlinNoise.MinusFade = EditorGUILayout.IntField(new GUIContent(fieldText, tooltip), m_perlinNoise.MinusFade);
+
+            fieldText = "Addition Value: ";
+            tooltip = "Default = 10";
+            m_perlinNoise.AdditionFade = EditorGUILayout.IntField(new GUIContent(fieldText, tooltip), m_perlinNoise.AdditionFade);
+            EditorGUILayout.Space();
+            // *************************************************
+
+            // *************************************************
             // Fractal
             GUILayout.Label("Fractal Brownian Motion", m_header3Style);
-            m_perlinNoise.Octaves = EditorGUILayout.FloatField(new GUIContent("Octaves: ", "Amount of times it iterates. More = more detail"), m_perlinNoise.Octaves);
-            m_perlinNoise.Frequency = EditorGUILayout.FloatField(new GUIContent("Frequency: ", "How much the bumps are spread out. Lower = flatter"), m_perlinNoise.Frequency);
-            m_perlinNoise.Amplitude = EditorGUILayout.FloatField(new GUIContent("Amplitude: ", "How flat/tall it is"), m_perlinNoise.Amplitude);
-            m_perlinNoise.AmplitudeGain = EditorGUILayout.FloatField(new GUIContent("Amplitude Gain: ", "How much the amplitude increases after each iteration"), m_perlinNoise.AmplitudeGain);
-            m_perlinNoise.Lacunarity = EditorGUILayout.FloatField(new GUIContent("Lacunarity: ", "How much the frequency is increased after each iteration"), m_perlinNoise.Lacunarity);
+
+            fieldText = "Octaves: ";
+            tooltip = "Amount of times it iterates. More = more detail";
+            m_perlinNoise.Octaves = EditorGUILayout.FloatField(new GUIContent(fieldText, tooltip), m_perlinNoise.Octaves);
+
+            fieldText = "Frequency: ";
+            tooltip = "How much the bumps are spread out. Lower = flatter";
+            m_perlinNoise.Frequency = EditorGUILayout.FloatField(new GUIContent(fieldText, tooltip), m_perlinNoise.Frequency);
+
+            fieldText = "Amplitude: ";
+            tooltip = "How flat/tall it is";
+            m_perlinNoise.Amplitude = EditorGUILayout.FloatField(new GUIContent(fieldText, tooltip), m_perlinNoise.Amplitude);
+
+            fieldText = "Amplitude Gain: ";
+            tooltip = "How much the amplitude increases after each iteration";
+            m_perlinNoise.AmplitudeGain = EditorGUILayout.FloatField(new GUIContent(fieldText, tooltip), m_perlinNoise.AmplitudeGain);
+
+            fieldText = "Lacunarity: ";
+            tooltip = "How much the frequency is increased after each iteration";
+            m_perlinNoise.Lacunarity = EditorGUILayout.FloatField(new GUIContent(fieldText, tooltip), m_perlinNoise.Lacunarity);
             EditorGUILayout.Space();
+            // *************************************************
         }
 
         /// <summary>

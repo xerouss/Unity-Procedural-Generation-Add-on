@@ -12,8 +12,8 @@ using UnityEngine;
 ////////////////////////////////////////////
 
 /// <summary>
-/// This class is attached to the created level that is created from the algorithms.
-/// This allows the user to delete the levels created that are from the Perlin Noise from the editor window.
+/// Base class for classes which are used to identify generated levels
+/// This is used to delete the correct levels depending on the current algorithm
 /// </summary>
 namespace ProceduralGenerationAddOn
 {

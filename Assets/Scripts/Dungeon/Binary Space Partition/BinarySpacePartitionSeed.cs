@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   22/04/2018
+//	Last Edited On:	   23/04/2018
 //	File:			   BSPSeed.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -12,11 +12,11 @@ using UnityEngine;
 ////////////////////////////////////////////
 
 /// <summary>
-/// This class is responsible for getting and setting the Binary Space Partition variable values
+/// This class is responsible for getting and setting the Binary Space Partition variable values for the seed
 /// </summary>
 namespace ProceduralGenerationAddOn
 {
-    public class BSPSeed : GeneratorSeed
+    public class BinarySpacePartitionSeed : GeneratorSeed
     {
         #region Constants
         const int numOfVariables = 6;
@@ -30,9 +30,10 @@ namespace ProceduralGenerationAddOn
         /// Constructor
         /// </summary>
         /// <param name="BSP">The BSP script being used</param>
-        public BSPSeed(BinarySpacePartition BSP)
+        public BinarySpacePartitionSeed(BinarySpacePartition BSP)
         {
-            m_numOfVariablesUserCanChange = numOfVariables;
+            // Total number of variables, used when creating the seed and setting the seed value to the variables
+            m_numOfVariablesUserCanChange = numOfVariables; 
             m_binarySpacePartition = BSP;
         }
 

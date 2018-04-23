@@ -13,7 +13,7 @@ using UnityEngine;
 
 /// <summary>
 /// This class is attached to the dungeon that is created from the BSP.
-/// This allows the user to delete only dungeon that are made from the BSP from the editor window.
+/// This allows the user to delete only dungeons that are made from the BSP from the editor window.
 /// </summary>
 namespace ProceduralGenerationAddOn
 {

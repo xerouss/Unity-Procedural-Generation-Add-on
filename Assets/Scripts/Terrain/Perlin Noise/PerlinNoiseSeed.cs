@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   22/04/2018
+//	Last Edited On:	   23/04/2018
 //	File:			   PerlinNoiseSeed.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -12,7 +12,7 @@ using UnityEngine;
 ////////////////////////////////////////////
 
 /// <summary>
-/// This class is responsible for getting and setting the Perlin Noise variable values
+/// This class is responsible for getting and setting the Perlin Noise variable values for the seed
 /// </summary>
 namespace ProceduralGenerationAddOn
 {

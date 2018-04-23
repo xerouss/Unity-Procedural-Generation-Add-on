@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   22/04/2018
+//	Last Edited On:	   23/04/2018
 //	File:			   BSPTreeNode.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -16,32 +16,28 @@ using UnityEngine;
 /// </summary>
 namespace ProceduralGenerationAddOn
 {
-    public class BSPTreeNode
+    public class BinarySpacePartitionTreeNode
     {
         #region Constants
-
         const int trueValue = 0;
         const int falseValue = 2;
         const int getCentre = 2;
         const int checkIfEvenNumber = 2;
         const int oddNumber = 1;
-
+        const int acrossCenter = 2;
         #endregion
 
         #region Variables
-
-        List<BSPTreeNode> m_children;
+        List<BinarySpacePartitionTreeNode> m_children;
         Vector2 m_centre;
         Vector2 m_botLeftCorner;
         int m_width;
         int m_height;
-
         int[,] m_spawnGrid;
         BinarySpacePartition m_binarySpacePartition;
         #endregion
 
         #region Properties
-
         public Vector2 Centre
         {
             get
@@ -81,7 +77,7 @@ namespace ProceduralGenerationAddOn
             }
         }
 
-        public List<BSPTreeNode> Children
+        public List<BinarySpacePartitionTreeNode> Children
         {
             get
             {
@@ -95,39 +91,46 @@ namespace ProceduralGenerationAddOn
         }
         #endregion
 
+        #region Constructors
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="centre">The centre of the cell</param>
         /// <param name="width">Width of the cell</param>
         /// <param name="height">Height of the cell</param>
-        public BSPTreeNode(Vector2 centre, int width, int height, Vector2 botLeftCorner, ref int[,] grid, BinarySpacePartition BSP)
+        /// <param name="botLeftCorner">The bot left corner of the cell</param>
+        /// <param name="grid">The spawn grid which is used to output the dungeon</param>
+        /// <param name="BSP">The Binary Space Partition class being used</param>
+        public BinarySpacePartitionTreeNode(Vector2 centre, int width, int height, Vector2 botLeftCorner, ref int[,] grid, BinarySpacePartition BSP)
         {
-            m_children = new List<BSPTreeNode>();
+            m_children = new List<BinarySpacePartitionTreeNode>();
             m_centre = centre;
             m_width = width;
             m_height = height;
             m_botLeftCorner = botLeftCorner;
             m_spawnGrid = grid;
-
             m_binarySpacePartition = BSP;
-            
         }
 
-        public BSPTreeNode(Vector2 centre)
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="centre">The centre of the cell</param>
+        public BinarySpacePartitionTreeNode(Vector2 centre)
         {
-            m_children = new List<BSPTreeNode>();
+            m_children = new List<BinarySpacePartitionTreeNode>();
             m_centre = centre;
             m_width = 0;
             m_height = 0;
             m_botLeftCorner = Vector2.zero;
         }
+        #endregion
 
         /// <summary>
         /// Attach another cell to this current cell
         /// </summary>
         /// <param name="node">The new cell that connects to this one</param>
-        public void AttachNode(BSPTreeNode node)
+        public void AttachNode(BinarySpacePartitionTreeNode node)
         {
             m_children.Add(node);
         }
@@ -136,7 +139,7 @@ namespace ProceduralGenerationAddOn
         /// Remove a cell connected to this cell
         /// </summary>
         /// <param name="node">The cell to remove</param>
-        public void DetachNode(BSPTreeNode node)
+        public void DetachNode(BinarySpacePartitionTreeNode node)
         {
             m_children.Remove(node);
         }
@@ -153,7 +156,7 @@ namespace ProceduralGenerationAddOn
             int minCellSize = m_binarySpacePartition.MinimumCellSize;
 
             // Check if the cell can be split vertically or horizontally
-            // This is to prevent the newly created cells having a width/height smaller than the minimum
+            // This is to prevent the newly created cells having a width/height smaller than the minimum size
             if (m_width - minCellSize > minCellSize) canSplitVertically = true;
             if (m_height - minCellSize > minCellSize) canSplitHorizontally = true;
 
@@ -176,12 +179,11 @@ namespace ProceduralGenerationAddOn
             // Cannot split either way so don't
             else return;
 
-            // Get the upper bound of the split based on how the cell will be cut
+            // Get the max value of the split based on how the cell will be cut
             if (splitVertically) maxSplitBound = m_width;
             else maxSplitBound = m_height;
 
             // Get where the split happens
-            // The split bound is to prevent very small rooms
             int splitLocation = Random.Range(minCellSize, maxSplitBound - minCellSize);
 
             if (splitVertically)
@@ -205,25 +207,70 @@ namespace ProceduralGenerationAddOn
         /// <param name="node1Height">Height of the 1st node</param>
         /// <param name="node2Width">Width of the 2nd node</param>
         /// <param name="node2Height">Height of the 2nd node</param>
+        /// <param name="vertically">If the cell was cut vertically or horizontally</param>
+        /// <param name="splitPos">Where the split happened in the cell</param>
         void AddSplitNodesToTree(int node1Width, int node1Height, int node2Width, int node2Height, bool vertically, int splitPos)
         {
+            // *************************************************
+            // How they are split and bot left corners
+            // ____________________________________________ 
+            // |                    |                      | 
+            // |                    |                      |
+            // |       1st Node     |        2nd Node      |
+            // |                    |                      |
+            // |                    |                      |
+            // |____________________|______________________|
+            // ^ 1st node bot left  ^ Split Position and new bot left corner for 2nd node
+
+            //                                                       ____________________________________________
+            //                                                       |                                           | 
+            //                                                       |                                           |
+            //                                                       |                2nd Node                   |
+            // Split Position and new bot left corner for 2nd node > |-------------------------------------------|
+            //                                                       |                1st Node                   |
+            //                                                       |___________________________________________|
+            //                                                       ^ 1st node bot left
+            // *************************************************
+
+            // *************************************************
+            // First Node (Left or bot cell of the split)
+
             // Centre is just half of the new width and height
             Vector2 centre = new Vector2(node1Width / getCentre, node1Height / getCentre);
+
             // Apply the offset to the centre so the outputted room is in the correct location
-            // Without this it will spawn based on (0,0)
+            // Without this it will spawn always with the bot left corner at (0,0)
             centre.x += m_botLeftCorner.x;
             centre.y += m_botLeftCorner.y;
 
             // Create and attach the new cell made
-            BSPTreeNode node = new BSPTreeNode(centre, node1Width, node1Height, m_botLeftCorner, ref m_spawnGrid, m_binarySpacePartition);
+            // Uses the same bot left corner at the current node since its the left/bot node so it would not have moved
+            BinarySpacePartitionTreeNode node = new BinarySpacePartitionTreeNode(centre, node1Width, node1Height, m_botLeftCorner, ref m_spawnGrid, m_binarySpacePartition);
             AttachNode(node);
+            // *************************************************
 
-            // Create the other node
+            // *************************************************
+            // Second Node (Right or top cell of the split)
+
             centre = new Vector2(node2Width / getCentre, node2Height / getCentre);
 
+            // Save where the new bot left will be
             Vector2 botLeft = m_botLeftCorner;
 
             // Set the right/top side node's centre position
+            // Add the split position to the centre to make it the right/top side of the parent
+            // If this is not added it will be outputted to the same location as the left/bot side
+            // Have to apply it to the new corner since it has been moved from the parent
+            // Due to being the right/top cell and is not using that corner anymore
+            // ____________________________________________ 
+            // |                    |                      | 
+            // |         |          |           |          |
+            // |   Without adding   | With adding splitPos |
+            // |   splitPos         |           |          |
+            // |         |          |                      |
+            // |____________________|______________________|
+            //           ^ Centre               ^ Centre
+
             if (vertically)
             {
                 centre.x += splitPos;
@@ -236,13 +283,14 @@ namespace ProceduralGenerationAddOn
             }
 
             // Apply the offset to the centre so the outputted room is in the correct location
-            // Without this it will spawn based on (0,0)
+            // Without this it will spawn always with the bot left corner at (0,0)
             centre.x += m_botLeftCorner.x;
             centre.y += m_botLeftCorner.y;
 
             // Create and attach the other node
-            node = new BSPTreeNode(centre, node2Width, node2Height, botLeft, ref m_spawnGrid, m_binarySpacePartition);
+            node = new BinarySpacePartitionTreeNode(centre, node2Width, node2Height, botLeft, ref m_spawnGrid, m_binarySpacePartition);
             AttachNode(node);
+            // *************************************************
         }
 
         /// <summary>
@@ -260,12 +308,13 @@ namespace ProceduralGenerationAddOn
                     m_children[i].CreateRoom();
                 }
             }
+            // Is a leaf node
             else
             {
                 // Get the width and height of the room
                 // Is divided by 2 so they go across the centre of the room
-                int roomWidth = Random.Range(m_binarySpacePartition.MinimumRoomSize, m_width) / 2;
-                int roomHeight = Random.Range(m_binarySpacePartition.MinimumRoomSize, m_height) / 2;
+                int roomWidth = Random.Range(m_binarySpacePartition.MinimumRoomSize, m_width) / acrossCenter;
+                int roomHeight = Random.Range(m_binarySpacePartition.MinimumRoomSize, m_height) / acrossCenter;
 
                 // Save the bounds for th output of the room so these can be used when creating the corridors
                 int roomLeftBound = Mathf.FloorToInt(m_centre.x - roomWidth);
@@ -275,7 +324,7 @@ namespace ProceduralGenerationAddOn
 
                 // Check if the width/height is odd
                 // If so add 1 to upper to output the correct size
-                // Can't split the value both sides since its an odd number so add the remainder to the end
+                // Can't split the value both sides since its an odd number and needs to be an int so add the remainder to the end
                 if (m_width % checkIfEvenNumber == oddNumber) roomRightBound++;
                 if (m_height % checkIfEvenNumber == oddNumber) roomTopBound++;
 
@@ -293,10 +342,9 @@ namespace ProceduralGenerationAddOn
         /// <summary>
         /// Create the corridor to connect to the parent cell
         /// </summary>
-        /// <param name="parentCentre">The parent's cell centre</param>
-        public void CreateCorridorToParent(BSPTreeNode parent)
+        /// <param name="parentNode">The node's parent node</param>
+        public void CreateCorridorToParent(BinarySpacePartitionTreeNode parentNode)
         {
-
             // Check if the node has any children since we want to start with the leaf nodes first
             if (m_children.Count > 0)
             {
@@ -307,30 +355,31 @@ namespace ProceduralGenerationAddOn
                 }
             }
 
-            //GameObject centre = new GameObject();
-           // centre.transform.position = new Vector3(m_centre.x, 1, m_centre.y);
+            // For the root node since it doesn't have anything to connect to
+            if (parentNode.Centre == Vector2.zero) return;
 
-            // For the parent node since it doesn't have anything to connect to
-            if (parent.Centre == Vector2.zero) return;
-
-            // Based on the parent's position to the current node
-            // Spawn the corridor
+            // Based on the parent's position to the current node, spawn the corridor
             // Should only be in 4 straight line directions due to the splitting keeping one axis the same
-            if (m_centre.x < parent.Centre.x)
+
+            // Room is left of the parent room
+            if (m_centre.x < parentNode.Centre.x)
             {
-                CreateCorridor(Mathf.FloorToInt(m_centre.x), Mathf.FloorToInt(parent.Centre.x), true, Mathf.FloorToInt(m_centre.y));
+                CreateCorridor(m_centre.x, parentNode.Centre.x, true, m_centre.y);
             }
-            else if (m_centre.x > parent.Centre.x)
+            // Room is right of the parent room
+            else if (m_centre.x > parentNode.Centre.x)
             {
-                CreateCorridor(Mathf.FloorToInt(parent.Centre.x), Mathf.FloorToInt(m_centre.x), true, Mathf.FloorToInt(m_centre.y));
+                CreateCorridor(parentNode.Centre.x, m_centre.x, true, m_centre.y);
             }
-            else if (m_centre.y < parent.Centre.y)
+            // Room is below the parent room
+            else if (m_centre.y < parentNode.Centre.y)
             {
-                CreateCorridor(Mathf.FloorToInt(m_centre.y), Mathf.FloorToInt(parent.Centre.y), false, Mathf.FloorToInt(m_centre.x));
+                CreateCorridor(m_centre.y, parentNode.Centre.y, false, m_centre.x);
             }
+            // Room is above the parent room
             else
             {
-                CreateCorridor(Mathf.FloorToInt(parent.Centre.y), Mathf.FloorToInt(m_centre.y), false, Mathf.FloorToInt(m_centre.x));
+                CreateCorridor(parentNode.Centre.y, m_centre.y, false, m_centre.x);
             }
         }
 
@@ -341,22 +390,28 @@ namespace ProceduralGenerationAddOn
         /// <param name="upperBound">The end of the corridor</param>
         /// <param name="xAxis">Is the corridor going across on the x axis?</param>
         /// <param name="otherAxisValue">The value for the axis which the corridor is NOT going across</param>
-        public void CreateCorridor(int lowerBound, int upperBound, bool xAxis, int otherAxisValue)
+        public void CreateCorridor(float lowerBound, float upperBound, bool xAxis, float otherAxisValue)
         {
+            int lowerBoundInt = Mathf.FloorToInt(lowerBound);
+            int upperBoundInt = Mathf.FloorToInt(upperBound);
+            int otherAxisValueInt = Mathf.FloorToInt(otherAxisValue);
             int x = 0;
             int y = 0;
 
-            // Set the value for the axis the corridor won't be across on
-            if (xAxis) y = otherAxisValue;
-            else x = otherAxisValue;
+            // Set the value for the axis the corridor that won't be changed
+            // E.g. The room is on the left and the parent room on the right
+            // The creation will iterate the placement on the x axis to connect the rooms
+            // But the y axis will stay the same
+            if (xAxis) y = otherAxisValueInt;
+            else x = otherAxisValueInt;
 
-            for (int i = lowerBound; i < upperBound; i++)
+            for (int i = lowerBoundInt; i < upperBoundInt; i++)
             {
                 // Set the correct axis
                 if (xAxis) x = i;
                 else y = i;
 
-                // Add the corridor to the grid
+                // Add the corridor to the grid if the location isn't part of a room
                 if (m_spawnGrid[x, y] != BinarySpacePartition.roomGridNum)
                     m_spawnGrid[x, y] = BinarySpacePartition.corridorGridNum;
             }

@@ -28,7 +28,7 @@ namespace ProceduralGenerationAddOn
         const int xAxis = 0;
         const int yAxis = 1;
         const int getCentre = 2;
-        const int botConerOffsetForWall = 1;
+        const int botCornerOffsetForWall = 1;
         const int offsetToPreventOutOfBounds = 2;
         const int ySpawningPos = 1;
         const int empty = 0;
@@ -46,9 +46,9 @@ namespace ProceduralGenerationAddOn
         #endregion
 
         #region Variables
-        BSPTreeNode m_treeRootNode;
+        BinarySpacePartitionTreeNode m_treeRootNode;
         int[,] m_spawnGrid;
-        BSPSeed m_seed;
+        BinarySpacePartitionSeed m_seed;
         GameObject m_dungeonParent;
         GameObject m_dungeonCorridorParent;
         GameObject m_dungeonWallParent;
@@ -225,7 +225,7 @@ namespace ProceduralGenerationAddOn
             }
         }
 
-        public BSPSeed SeedClass
+        public BinarySpacePartitionSeed SeedClass
         {
             get
             {
@@ -247,7 +247,7 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public BinarySpacePartition()
         {
-            m_seed = new BSPSeed(this);
+            m_seed = new BinarySpacePartitionSeed(this);
             m_seed.UpdateSeed();
         }
 
@@ -262,34 +262,13 @@ namespace ProceduralGenerationAddOn
             m_minimumRoomSize = defaultMinRoomSize;
         }
 
-        #region Seed functions
-
-        /// <summary>
-        /// Update the seed value
-        /// </summary>
-        /// <returns>The new seed value</returns>
-        public string UpdateSeed()
-        {
-            return m_seed.UpdateSeed();
-        }
-
-        /// <summary>
-        /// Set the user variables based on the seed
-        /// </summary>
-        /// <param name="newSeed">The new seed</param>
-        public void SetVariablesBasedOnSeed(string newSeed)
-        {
-            m_seed.SetSeedToVariables(newSeed);
-        }
-
-        #endregion
-
         /// <summary>
         /// Create a new dungeon
         /// </summary>
+        /// <param name="reUseGameObject">If the user wants to create a new dungeon using an exciting game object</param>
         public void CreateDungeon(bool reUseGameObject)
         {
-            InitialiseDungeon();
+            InitialiseDungeon(); // Clear the current dungeon
             CreateCells();
             CreateRooms();
             CreateCorridors();
@@ -314,19 +293,22 @@ namespace ProceduralGenerationAddOn
         {
             // Create a queue of which nodes to split
             // Used a queue so it does all children in a row before starting a new row in the tree
-            Queue<BSPTreeNode> splitQueue = new Queue<BSPTreeNode>();
-            BSPTreeNode currentNode;
+            Queue<BinarySpacePartitionTreeNode> splitQueue = new Queue<BinarySpacePartitionTreeNode>();
+            BinarySpacePartitionTreeNode currentNode;
+
+            // Bot left corner is set to (1,1) to keep the bot and left parts of the grid free for walls to prevent out of bounds errors
+            Vector2 rootBotLeftCorner = new Vector2(botCornerOffsetForWall, botCornerOffsetForWall);
+
+            // Need to +1 the centre or the child nodes won't line up correctly and won't connect to the root with corridors due to the (1, 1) bot corner
+            Vector2 rootCentre = new Vector2((m_dungeonSize.x / getCentre) + botCornerOffsetForWall, (m_dungeonSize.z / getCentre) + botCornerOffsetForWall);
+
             // Create the root and add it to the tree
-            // TODO: let the user change these values
-            // Bot left corner is set to 1,1 to keep the bot and left parts of the grid free for walls
-            // Need to +1 the centre or the child nodes won't line up correctly and won't connect to the root with corridors
-            m_treeRootNode = new BSPTreeNode(new Vector2((m_dungeonSize.x / getCentre) + botConerOffsetForWall, (m_dungeonSize.z / getCentre) + botConerOffsetForWall), 
-                (int)m_dungeonSize.x, (int)m_dungeonSize.z, new Vector2(botConerOffsetForWall, botConerOffsetForWall), ref m_spawnGrid, this);
+            m_treeRootNode = new BinarySpacePartitionTreeNode(rootCentre, (int)m_dungeonSize.x, (int)m_dungeonSize.z, rootBotLeftCorner, ref m_spawnGrid, this);
             splitQueue.Enqueue(m_treeRootNode);
 
-            // For the amount of time the user wants to split the cells
             for (int i = 0; i < m_splitAmount; i++)
             {
+                // Stop if queue is empty
                 if (splitQueue.Count == empty) return;
 
                 // Remove the node at the start of the queue but save it to split it
@@ -342,7 +324,7 @@ namespace ProceduralGenerationAddOn
         }
 
         /// <summary>
-        /// Create the rooms instead the cells for the BSP
+        /// Create the rooms inside the cells for the BSP
         /// </summary>
         public void CreateRooms()
         {
@@ -354,7 +336,9 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public void CreateCorridors()
         {
-            m_treeRootNode.CreateCorridorToParent(new BSPTreeNode(Vector2.zero));
+            // The passed node has a 0,0 center to exit the function before it tries to connect to nothing
+            // This is due to the root node having no parents to connect to
+            m_treeRootNode.CreateCorridorToParent(new BinarySpacePartitionTreeNode(Vector2.zero));
         }
 
         /// <summary>
@@ -362,7 +346,7 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public void CreateWalls()
         {
-            // Go through the gird if there is a room or corridor
+            // Go through the gird to check if there is a room or corridor
             // Check the surroundings for empty spaces, if there is one create a wall there
             for (int x = 0; x < m_spawnGrid.GetLength(xAxis); x++)
             {
@@ -392,9 +376,12 @@ namespace ProceduralGenerationAddOn
             }
         }
 
+        #region Spawning functions
+
         /// <summary>
         /// Spawn the dungeon onto the scene
         /// </summary>
+        /// <param name="reUseGameObject">If the user wants to create a new dungeon using an exciting game object</param>
         public void OutputDungeon(bool reUseGameObject)
         {
             // Check if the user has inputted the tiles or not
@@ -404,7 +391,7 @@ namespace ProceduralGenerationAddOn
                 return;
             }
 
-            // If the user deletes the previous dungeon and dungeonParent is now null
+            // If the user deletes the previous dungeon so the  dungeonParent is now null
             // Check if there is any other dungeons to recreate on
             if(m_dungeonParent == null)
             {
@@ -416,42 +403,34 @@ namespace ProceduralGenerationAddOn
                 }
             }
 
+            // If the user wants to re-use the current dungeon game object
+            // Go through the parent of the whole dungeon and remove the children
+            // To get rid of the current dungeon tiles
             if(reUseGameObject && m_dungeonParent != null)
             {
                 // Need to get the value before the loop since it changes each time a chikd is destroyed
                 int numberOfChildren = m_dungeonParent.transform.childCount;
 
-                // Delete all game objects that are a child to the dungeonParent
                 for (int i = 0; i < numberOfChildren; i++)
                 {
                     // Destroy at index 0 since every time a child is destroyed it moves the locations down
                     MonoBehaviour.DestroyImmediate(m_dungeonParent.transform.GetChild(0).gameObject);
                 }
             }
+            // If the user wants to create a new dungeon or if there is no current dungeon
             else if (reUseGameObject == false || m_dungeonParent == null)
             {
-                // Create parents to organise the hierarchy
-                m_dungeonParent = new GameObject();
-                m_dungeonParent.name = "Dungeon";
+                m_dungeonParent = CreateParent("Dungeon", null);
+
+                // Used to find the dungeon to delete when the delete button is pressed by the user
                 m_dungeonParent.AddComponent<GeneratedDungeon>();
             }
 
-
-            m_dungeonRoomParent = new GameObject();
-            m_dungeonRoomParent.name = "Rooms";
-            m_dungeonRoomParent.transform.SetParent(m_dungeonParent.transform);
-
-            m_dungeonCorridorParent = new GameObject();
-            m_dungeonCorridorParent.name = "Corridors";
-            m_dungeonCorridorParent.transform.SetParent(m_dungeonParent.transform);
-
-            m_dungeonWallParent = new GameObject();
-            m_dungeonWallParent.name = "Walls";
-            m_dungeonWallParent.transform.SetParent(m_dungeonParent.transform);
-
-            m_dungeonRoofParent = new GameObject();
-            m_dungeonRoofParent.name = "Roof";
-            m_dungeonRoofParent.transform.SetParent(m_dungeonParent.transform);
+            // Create the parent game objects to use in hierarchy to organise it
+            m_dungeonRoomParent = CreateParent("Rooms", m_dungeonParent.transform);
+            m_dungeonCorridorParent = CreateParent("Corridors", m_dungeonParent.transform);
+            m_dungeonWallParent = CreateParent("Walls", m_dungeonParent.transform);   
+            m_dungeonRoofParent = CreateParent("Roof", m_dungeonParent.transform);
 
             // Go through the gird and based on the number spawn the correct tile
             for (int x = 0; x < m_spawnGrid.GetLength(xAxis); x++)
@@ -461,12 +440,10 @@ namespace ProceduralGenerationAddOn
                     switch (m_spawnGrid[x, z])
                     {
                         case roomGridNum:
-                            GameObject.Instantiate(m_floorTile, new Vector3(x, ySpawningPos, z), m_floorTile.transform.rotation, m_dungeonRoomParent.transform);
-                            SpawnRoofTile(x, z, m_dungeonRoofParent.transform);
+                            SpawnFloorTile(m_floorTile, x, z, m_dungeonRoomParent.transform, m_dungeonRoofParent.transform);
                             break;
                         case corridorGridNum:
-                            GameObject.Instantiate(m_corridorTile, new Vector3(x, ySpawningPos, z), m_corridorTile.transform.rotation, m_dungeonCorridorParent.transform);
-                            SpawnRoofTile(x, z, m_dungeonRoofParent.transform);
+                            SpawnFloorTile(m_corridorTile, x, z, m_dungeonCorridorParent.transform, m_dungeonRoofParent.transform);
                             break;
                         case wallGridNum:
                             // Stack up the walls to make the rooms 3D
@@ -476,10 +453,25 @@ namespace ProceduralGenerationAddOn
                             }
                             break;
                         default:
+                            Debug.Log("ERROR: Incorrect spawn grid number!");
                             break;
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Create the floor tile in the scene
+        /// </summary>
+        /// <param name="tile">The tile to spawn</param>
+        /// <param name="x">X Position</param>
+        /// <param name="z">Z Position</param>
+        /// <param name="parent">The parent to attach the tile to</param>
+        /// <param name="roofParent">The parent to attach the roof to</param>
+        void SpawnFloorTile(GameObject tile, int x, int z, Transform parent, Transform roofParent)
+        {
+            GameObject.Instantiate(tile, new Vector3(x, ySpawningPos, z), tile.transform.rotation, parent);
+            SpawnRoofTile(x, z, roofParent);
         }
 
         /// <summary>
@@ -495,6 +487,24 @@ namespace ProceduralGenerationAddOn
                 GameObject.Instantiate(m_roofTile, new Vector3(x, m_dungeonSize.y, z), m_corridorTile.transform.rotation, parent);
             }
         }
+
+        /// <summary>
+        /// Create a game object to act as a parent for parts of the dungeon
+        /// </summary>
+        /// <param name="name">Name of the parent</param>
+        /// <param name="dungeonParent">The parent to attach the made parent to</param>
+        /// <returns>The created game object parent</returns>
+        public GameObject CreateParent(string name, Transform dungeonParent)
+        {
+            GameObject parent = new GameObject();
+            parent.name = name;
+
+            // If check for the root parent since it has nothing to attach to
+            if(dungeonParent != null) parent.transform.SetParent(dungeonParent);
+
+            return parent;
+        }
+
+        #endregion
     }
 }
-
