@@ -29,7 +29,6 @@ namespace ProceduralGenerationAddOn
         const int dropdownSpaceHeight = 15;
         #endregion
 
-        #region Private
         enum LevelTypes
         {
             TERRAIN, DUNGEON, NUMOFLEVELTYPES
@@ -51,8 +50,6 @@ namespace ProceduralGenerationAddOn
         static GUIStyle m_header3Style;
         static GUIStyle m_header4Style;
         #endregion
-        #endregion
-
         #endregion
 
         // Where to access the window
@@ -111,7 +108,10 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         private void Update()
         {
-            if (m_perlinNoise != null && m_realtimeGeneration) m_gui.CreateLevel();
+            // Check if there is a GUI or else there will be a null reference error
+            if (m_gui == null) return;
+
+            if (m_gui.RealTimeGenerationActive) m_gui.CreateLevel();
         }
 
         /// <summary>
@@ -138,7 +138,6 @@ namespace ProceduralGenerationAddOn
                     break;
                 case (int)LevelTypes.DUNGEON:
                     m_gui = m_binarySpacePartitionGUI;
-                    m_realtimeGeneration = false; // Dungeon does not have real-time generation
                     break;
                 default:
                     Debug.Log("ERROR: UNKOWN LEVEL TYPE");
@@ -148,15 +147,8 @@ namespace ProceduralGenerationAddOn
             // Display the selected level type's GUI
             m_gui.DisplayGUI();
 
-            // If the user wants to update the terrain as they change it
-            // Only works for the terrain since real-time generation can't be done on the BSP
-            // Since the outcome is random
-            if(m_levelType == (int)LevelTypes.TERRAIN)
-                m_realtimeGeneration = EditorGUILayout.Toggle(new GUIContent("Real-time Generation: ", 
-                    "Update the terrain as you change it. Turn off for large terrains as it may cause problems"), m_realtimeGeneration);
-
-            // Don't need the button if the terrain is being auto updated
-            if (!m_realtimeGeneration)
+            // Don't need the button if the level isn't be updated in real-time
+            if (!m_gui.RealTimeGenerationActive)
             {
                 // Create a new GameObject that contains the level
                 if (GUILayout.Button("Create Level"))

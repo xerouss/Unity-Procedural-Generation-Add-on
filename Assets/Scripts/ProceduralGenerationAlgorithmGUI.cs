@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   22/04/2018
+//	Last Edited On:	   23/04/2018
 //	File:			   ProceduralGenerationAlgorithmGUI.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -30,12 +30,29 @@ namespace ProceduralGenerationAddOn
         string m_headerTitle;
         string m_tempSeed;
         GeneratorSeed m_seed;
+        protected bool m_allowRealTimeGeneration = false;
+        protected bool m_realTimeGenerationActive = false;
 
         #region Style Variables
         protected GUIStyle m_header2Style;
         protected GUIStyle m_header3Style;
         protected GUIStyle m_header4Style;
         #endregion
+        #endregion
+
+        #region Properties
+        public bool RealTimeGenerationActive
+        {
+            get
+            {
+                return m_realTimeGenerationActive;
+            }
+
+            set
+            {
+                m_realTimeGenerationActive = value;
+            }
+        }
         #endregion
 
         /// <summary>
@@ -61,6 +78,11 @@ namespace ProceduralGenerationAddOn
             // Header
             GUILayout.Label(m_headerTitle, m_header2Style);
             EditorGUILayout.Space();
+
+            // If the algorithm can have realtime generation, allow the user to switch it on/off
+            if (m_allowRealTimeGeneration)
+                m_realTimeGenerationActive = EditorGUILayout.Toggle(new GUIContent("Real-time Generation: ",
+                   "Update the terrain as you change it. Turn off for large levels as it may cause problems"), m_realTimeGenerationActive);
 
             // Seed
             GUI.SetNextControlName("Seed Field"); // Set a name for the seed field to check if it's highlighted (look at the end of the function)

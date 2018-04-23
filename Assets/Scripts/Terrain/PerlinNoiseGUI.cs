@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   22/04/2018
+//	Last Edited On:	   23/04/2018
 //	File:			   PerlinNoiseGUI.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -39,6 +39,7 @@ namespace ProceduralGenerationAddOn
             // Call the ProceduralGenerationAlgorithmGUI constructor
 
             m_perlinNoise = perlin;
+            m_allowRealTimeGeneration = true;
         }
 
         /// <summary>
