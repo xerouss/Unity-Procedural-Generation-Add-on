@@ -23,6 +23,8 @@ namespace ProceduralGenerationAddOn
         const int heightmapResLowerBound = 0;
         const int heightmapResHigherBound = 512;
         const string title = "Terrain";
+        const bool dontCreateNewTerrain = false;
+        const bool createNewTerrain = true;
         #endregion
 
         #region Variables
@@ -85,7 +87,7 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public override void CreateLevel()
         {
-            m_perlinNoise.SetTerrainData();
+            m_perlinNoise.SetTerrainData(createNewTerrain);
         }
 
         /// <summary>
@@ -93,15 +95,15 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public override void ReCreateLevel()
         {
-            m_perlinNoise.SetTerrainData();
+            m_perlinNoise.SetTerrainData(dontCreateNewTerrain);
         }
 
         /// <summary>
-        /// Delete the currently used terrain
+        /// Delete the current level from the scene
         /// </summary>
         public override void DeleteLevel()
         {
-           MonoBehaviour.DestroyImmediate(GameObject.FindObjectOfType<Terrain>().gameObject);
+            MonoBehaviour.DestroyImmediate(GameObject.FindObjectOfType<GeneratedTerrain>().gameObject);
         }
 
         /// <summary>

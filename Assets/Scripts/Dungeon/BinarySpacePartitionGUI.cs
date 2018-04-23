@@ -36,7 +36,7 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public BinarySpacePartitionGUI(GeneratorSeed seed, BinarySpacePartition bsp,
             GUIStyle header2, GUIStyle header3, GUIStyle header4) :
-            base(seed, title, header2,  header3,  header4)
+            base(seed, title, header2, header3, header4)
         {
             // Call the ProceduralGenerationAlgorithmGUI constructor
 
@@ -89,7 +89,7 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public override void CreateLevel()
         {
-            m_binarySpacePartition.CreateDungeon();
+            m_binarySpacePartition.CreateDungeon(false);
         }
 
         /// <summary>
@@ -97,15 +97,15 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public override void ReCreateLevel()
         {
-            m_binarySpacePartition.CreateDungeon();
+            m_binarySpacePartition.CreateDungeon(true);
         }
 
         /// <summary>
-        /// Delete the currently used terrain
+        /// Delete the current level from the scene
         /// </summary>
         public override void DeleteLevel()
         {
-           
+            MonoBehaviour.DestroyImmediate(GameObject.FindObjectOfType<GeneratedDungeon>().gameObject);
         }
 
         /// <summary>

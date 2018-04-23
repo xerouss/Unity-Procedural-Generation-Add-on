@@ -9,7 +9,7 @@
 // Libraries and namespaces
 using UnityEngine;
 using UnityEditor;
-
+using System;
 ////////////////////////////////////////////
 
 /// <summary>
@@ -32,6 +32,7 @@ namespace ProceduralGenerationAddOn
         GeneratorSeed m_seed;
         protected bool m_allowRealTimeGeneration = false;
         protected bool m_realTimeGenerationActive = false;
+        protected string m_typeOfOutputtedLevel;
 
         #region Style Variables
         protected GUIStyle m_header2Style;
@@ -130,6 +131,9 @@ namespace ProceduralGenerationAddOn
         public virtual void DeleteLevel()
         {
             // Will be filled in by the classes which inherit from this class
+            // Tried making it so both the BSP and Perlin Noise use the same function
+            // However, it would not get the generated level type properly from a string
+            // And would just output null
         }
 
         /// <summary>

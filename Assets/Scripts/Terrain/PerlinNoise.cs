@@ -537,13 +537,17 @@ namespace ProceduralGenerationAddOn
 		/// <summary>
 		/// Get the terrain in the scene, if there isn't spawn one
 		/// </summary>
-		public void CreateTerrain()
+		public void CreateTerrain(bool CreateNewTerrain)
 		{
 			// If there is no current terrain
-			if (Terrain.activeTerrain == null)
+			if (Terrain.activeTerrain == null || CreateNewTerrain)
 			{
 				// Create the terrain data with the default data
-				Terrain.CreateTerrainGameObject(m_terrainData);
+				GameObject createdTerrain = Terrain.CreateTerrainGameObject(m_terrainData);
+
+				// Attach the PerlinNoiseTerrain to the terrain so the editor can find it
+				// When the user wants to delete it
+				createdTerrain.AddComponent<GeneratedTerrain>();
 			}
 			else Terrain.activeTerrain.terrainData = m_terrainData;
 		}
@@ -551,7 +555,7 @@ namespace ProceduralGenerationAddOn
 		/// <summary>
 		/// Create the terrain with Perlin Noise
 		/// </summary>
-		public void SetTerrainData()
+		public void SetTerrainData(bool CreateNewTerrain)
 		{
 			// Set the heightmap res and terrain size here or else it won't change
 			// Can't do it in the property because it will randomly delete the level heightmap
@@ -585,7 +589,7 @@ namespace ProceduralGenerationAddOn
 			m_terrainData.SetHeights(heightMapBaseX, heightMapBaseY, heights);
 
 			// Create the terrain with the new height map
-			CreateTerrain();
+			CreateTerrain(CreateNewTerrain);
 		}
 
 		#endregion

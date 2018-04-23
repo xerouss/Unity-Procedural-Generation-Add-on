@@ -36,7 +36,6 @@ namespace ProceduralGenerationAddOn
 
         #region Variables
         int m_levelType = 0;
-        bool m_realtimeGeneration = false;
         string[] m_levelTypeOptions = { "Terrain", "Dungeon" };
         ProceduralGenerationAlgorithmGUI m_gui;
         static PerlinNoise m_perlinNoise;
@@ -111,7 +110,7 @@ namespace ProceduralGenerationAddOn
             // Check if there is a GUI or else there will be a null reference error
             if (m_gui == null) return;
 
-            if (m_gui.RealTimeGenerationActive) m_gui.CreateLevel();
+            if (m_gui.RealTimeGenerationActive) m_gui.ReCreateLevel();
         }
 
         /// <summary>
@@ -149,14 +148,14 @@ namespace ProceduralGenerationAddOn
 
             // Don't need the button if the level isn't be updated in real-time
             if (!m_gui.RealTimeGenerationActive)
-            {
-                // Create a new GameObject that contains the level
-                if (GUILayout.Button("Create Level"))
-                    m_gui.CreateLevel();
-
+            {               
                 // Create the level using the existing GameObject
-                if (GUILayout.Button("Re-create Level"))
+                if (GUILayout.Button("Create Level"))
                     m_gui.ReCreateLevel();
+
+                // Create a new GameObject that contains the level
+                if (GUILayout.Button("Create New Level GameObject"))
+                    m_gui.CreateLevel();
 
                 // Delete the level's GameObject
                 if (GUILayout.Button("Delete Level"))

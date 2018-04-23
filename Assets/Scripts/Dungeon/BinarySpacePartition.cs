@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   22/04/2018
+//	Last Edited On:	   23/04/2018
 //	File:			   BinarySpacePartition.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -31,6 +31,7 @@ namespace ProceduralGenerationAddOn
         const int botConerOffsetForWall = 1;
         const int offsetToPreventOutOfBounds = 2;
         const int ySpawningPos = 1;
+        const int empty = 0;
 
         // Defaults
         const int defaultDungeonSizeXZ = 20;
@@ -48,6 +49,11 @@ namespace ProceduralGenerationAddOn
         BSPTreeNode m_treeRootNode;
         int[,] m_spawnGrid;
         BSPSeed m_seed;
+        GameObject m_dungeonParent;
+        GameObject m_dungeonCorridorParent;
+        GameObject m_dungeonWallParent;
+        GameObject m_dungeonRoomParent;
+        GameObject m_dungeonRoofParent;
 
         // User Variables
         Vector3 m_dungeonSize = new Vector3(defaultDungeonSizeXZ, defaultDungeonSizeY, defaultDungeonSizeXZ);
@@ -281,14 +287,14 @@ namespace ProceduralGenerationAddOn
         /// <summary>
         /// Create a new dungeon
         /// </summary>
-        public void CreateDungeon()
+        public void CreateDungeon(bool reUseGameObject)
         {
             InitialiseDungeon();
             CreateCells();
             CreateRooms();
             CreateCorridors();
             CreateWalls();
-            OutputDungeon();
+            OutputDungeon(reUseGameObject);
         }
 
         /// <summary>
@@ -321,7 +327,9 @@ namespace ProceduralGenerationAddOn
             // For the amount of time the user wants to split the cells
             for (int i = 0; i < m_splitAmount; i++)
             {
-                // Remove the node at the start of the queue but save it tp split it
+                if (splitQueue.Count == empty) return;
+
+                // Remove the node at the start of the queue but save it to split it
                 currentNode = splitQueue.Dequeue();
                 currentNode.SplitCell();
 
@@ -387,7 +395,7 @@ namespace ProceduralGenerationAddOn
         /// <summary>
         /// Spawn the dungeon onto the scene
         /// </summary>
-        public void OutputDungeon()
+        public void OutputDungeon(bool reUseGameObject)
         {
             // Check if the user has inputted the tiles or not
             if(m_floorTile == null || m_corridorTile == null || m_wallTile == null)
@@ -396,25 +404,54 @@ namespace ProceduralGenerationAddOn
                 return;
             }
 
-            // Create parents to organise the hierarchy
-            GameObject parentDungeon = new GameObject();
-            parentDungeon.name = "Dungeon";
+            // If the user deletes the previous dungeon and dungeonParent is now null
+            // Check if there is any other dungeons to recreate on
+            if(m_dungeonParent == null)
+            {
+                GeneratedDungeon otherDungeon = GameObject.FindObjectOfType<GeneratedDungeon>();
 
-            GameObject parentRoom = new GameObject();
-            parentRoom.name = "Rooms";
-            parentRoom.transform.SetParent(parentDungeon.transform);
+                if (otherDungeon != null)
+                {
+                    m_dungeonParent = otherDungeon.gameObject;
+                }
+            }
 
-            GameObject parentCorridor = new GameObject();
-            parentCorridor.name = "Corridors";
-            parentCorridor.transform.SetParent(parentDungeon.transform);
+            if(reUseGameObject && m_dungeonParent != null)
+            {
+                // Need to get the value before the loop since it changes each time a chikd is destroyed
+                int numberOfChildren = m_dungeonParent.transform.childCount;
 
-            GameObject parentWall = new GameObject();
-            parentWall.name = "Walls";
-            parentWall.transform.SetParent(parentDungeon.transform);
+                // Delete all game objects that are a child to the dungeonParent
+                for (int i = 0; i < numberOfChildren; i++)
+                {
+                    // Destroy at index 0 since every time a child is destroyed it moves the locations down
+                    MonoBehaviour.DestroyImmediate(m_dungeonParent.transform.GetChild(0).gameObject);
+                }
+            }
+            else if (reUseGameObject == false || m_dungeonParent == null)
+            {
+                // Create parents to organise the hierarchy
+                m_dungeonParent = new GameObject();
+                m_dungeonParent.name = "Dungeon";
+                m_dungeonParent.AddComponent<GeneratedDungeon>();
+            }
 
-            GameObject parentRoof = new GameObject();
-            parentRoof.name = "Roof";
-            parentRoof.transform.SetParent(parentDungeon.transform);
+
+            m_dungeonRoomParent = new GameObject();
+            m_dungeonRoomParent.name = "Rooms";
+            m_dungeonRoomParent.transform.SetParent(m_dungeonParent.transform);
+
+            m_dungeonCorridorParent = new GameObject();
+            m_dungeonCorridorParent.name = "Corridors";
+            m_dungeonCorridorParent.transform.SetParent(m_dungeonParent.transform);
+
+            m_dungeonWallParent = new GameObject();
+            m_dungeonWallParent.name = "Walls";
+            m_dungeonWallParent.transform.SetParent(m_dungeonParent.transform);
+
+            m_dungeonRoofParent = new GameObject();
+            m_dungeonRoofParent.name = "Roof";
+            m_dungeonRoofParent.transform.SetParent(m_dungeonParent.transform);
 
             // Go through the gird and based on the number spawn the correct tile
             for (int x = 0; x < m_spawnGrid.GetLength(xAxis); x++)
@@ -424,18 +461,18 @@ namespace ProceduralGenerationAddOn
                     switch (m_spawnGrid[x, z])
                     {
                         case roomGridNum:
-                            GameObject.Instantiate(m_floorTile, new Vector3(x, ySpawningPos, z), m_floorTile.transform.rotation, parentRoom.transform);
-                            SpawnRoofTile(x, z, parentRoof.transform);
+                            GameObject.Instantiate(m_floorTile, new Vector3(x, ySpawningPos, z), m_floorTile.transform.rotation, m_dungeonRoomParent.transform);
+                            SpawnRoofTile(x, z, m_dungeonRoofParent.transform);
                             break;
                         case corridorGridNum:
-                            GameObject.Instantiate(m_corridorTile, new Vector3(x, ySpawningPos, z), m_corridorTile.transform.rotation, parentCorridor.transform);
-                            SpawnRoofTile(x, z, parentRoof.transform);
+                            GameObject.Instantiate(m_corridorTile, new Vector3(x, ySpawningPos, z), m_corridorTile.transform.rotation, m_dungeonCorridorParent.transform);
+                            SpawnRoofTile(x, z, m_dungeonRoofParent.transform);
                             break;
                         case wallGridNum:
                             // Stack up the walls to make the rooms 3D
                             for (int y = 1; y < m_dungeonSize.y; y++)
                             {
-                                GameObject.Instantiate(m_wallTile, new Vector3(x, y, z), m_wallTile.transform.rotation, parentWall.transform);
+                                GameObject.Instantiate(m_wallTile, new Vector3(x, y, z), m_wallTile.transform.rotation, m_dungeonWallParent.transform);
                             }
                             break;
                         default:
