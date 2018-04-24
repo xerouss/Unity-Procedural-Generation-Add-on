@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   23/04/2018
+//	Last Edited On:	   24/04/2018
 //	File:			   PerlinNoise.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -12,7 +12,7 @@ using UnityEngine;
 ////////////////////////////////////////////
 
 /// <summary>
-/// Original Class when first implementing Perlin Noise
+/// The class that includes the Perlin Noise functionality
 /// </summary>
 namespace ProceduralGenerationAddOn
 {
@@ -51,7 +51,7 @@ namespace ProceduralGenerationAddOn
 		const int hashMask = 511;
 		const int gradientMask = 7;
 
-		// The positions of the points in the cube
+		// The positions of the points in the square
 		readonly Vector2 topLeft = new Vector2(0, 1);
 		readonly Vector2 topRight = new Vector2(1, 1);
 		readonly Vector2 botLeft = new Vector2(0, 0);
@@ -68,7 +68,7 @@ namespace ProceduralGenerationAddOn
 												  new Vector2(-1f,-1f) };
 
 		// Hash has 256 values but is repeated to prevent overflow of the array
-		// The total size if 512
+		// The total size is 512
 		// The larger size also allows bigger values for the octaves and tile amount
 		readonly int[] hash = { 151,160,137,91,90,15,
 			131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
@@ -95,14 +95,13 @@ namespace ProceduralGenerationAddOn
 			251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,
 			49,192,214,31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,
 			138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180};
-
 		#endregion
 
 		#region Variables
-
 		// The terrain data used when creating the terrain
 		TerrainData m_terrainData;
-		PerlinNoiseSeed m_seed;
+
+		PerlinNoiseSeed m_seed; // The seed
 
 		// Variables the user can change
 		Vector3 m_terrainSize = new Vector3(defaultTerrainXSize, defaultTerrainYSize, defaultTerrainZSize);
@@ -263,6 +262,8 @@ namespace ProceduralGenerationAddOn
 
 			set
 			{
+				// Having less than 0 does nothing
+				value = CheckIfValueIsLessThanZero(value);
 				m_amplitudeGain = value;
 			}
 		}
@@ -276,6 +277,8 @@ namespace ProceduralGenerationAddOn
 
 			set
 			{
+				// Causes errors if less than 0 so make sure it doesn't go below it
+				value = CheckIfValueIsLessThanZero(value);
 				m_lacunarity = value;
 			}
 		}
@@ -290,8 +293,8 @@ namespace ProceduralGenerationAddOn
 			set
 			{
 				// Make sure the offset doesn't go less than 0 since it produces an error
-				if (value.x < 0) value.x = 0;
-				if (value.y < 0) value.y = 0;
+				value.x = CheckIfValueIsLessThanZero(value.x);
+				value.y = CheckIfValueIsLessThanZero(value.y);
 
 				m_posOffset = value;
 			}
@@ -303,7 +306,7 @@ namespace ProceduralGenerationAddOn
 			set
 			{
 				// Make sure the offset doesn't go less than 0 since it produces an error
-				if (value < 0) value = 0;
+				value = CheckIfValueIsLessThanZero(value);
 				m_posOffset.x = value;
 			}
 		}
@@ -313,7 +316,7 @@ namespace ProceduralGenerationAddOn
 			set
 			{
 				// Make sure the offset doesn't go less than 0 since it produces an error
-				if (value < 0) value = 0;
+				value = CheckIfValueIsLessThanZero(value);
 				m_posOffset.y = value;
 			}
 		}
@@ -325,56 +328,9 @@ namespace ProceduralGenerationAddOn
 				return m_seed;
 			}
 		}
-
-		public string SeedValue
-		{
-			get
-			{
-				return m_seed.Seed;
-			}
-		}
 		#endregion
 
-		/// <summary>
-		/// Reset all variables the user can change back to their defaults
-		/// </summary>
-		public void ResetVariableValues()
-		{
-			m_terrainSize = new Vector3(defaultTerrainXSize, defaultTerrainYSize, defaultTerrainZSize);
-			m_posOffset = new Vector2(defaultXOffset, defaultYOffset);
-			m_heightmapResolution = defaultHeightmapRes;
-			m_multiplyFade = defaultMultiplyFade;
-			m_minusFade = defaultMinusFade;
-			m_additionFade = defaultAdditionFade;
-			m_octaves = defaultOctaves;
-			m_frequency = defaultFrequency;
-			m_amplitude = defaultAmplitude;
-			m_amplitudeGain = defaultAmplitudeGain;
-			m_lacunarity = defaultLacunarity;
-		}
-
-		#region Seed functions
-
-		/// <summary>
-		/// Update the seed value
-		/// </summary>
-		/// <returns>The new seed value</returns>
-		public string UpdateSeed()
-		{
-			return m_seed.UpdateSeed();
-		}
-
-		/// <summary>
-		/// Set the user variables based on the seed
-		/// </summary>
-		/// <param name="newSeed">The new seed</param>
-		public void SetVariablesBasedOnSeed(string newSeed)
-		{
-			m_seed.SetSeedToVariables(newSeed);
-		}
-
-		#endregion
-
+		// Functions
 		#region Perlin Noise Functions
 
 		/// <summary>
@@ -398,7 +354,14 @@ namespace ProceduralGenerationAddOn
 		/// <returns>Height</returns>
 		public float Perlin(float x, float y)
 		{
-			// Get the lower bound of the square  
+			// The perlin noise works by getting the square corners which the passed location is in
+			// These square corners each have gradients and based on the distance between
+			// The current location and each square corner will determine the height of the location
+
+			// **********************************************************************
+			// Get the square values
+
+			// Get the lower bounds of the square  
 			int floorX = Mathf.FloorToInt(x);
 			int floorY = Mathf.FloorToInt(y);
 
@@ -415,16 +378,21 @@ namespace ProceduralGenerationAddOn
 			// +1 to get the top side since the square is 1 in height
 			int hashBot = floorY & hashMask;
 			int hashTop = hashBot + 1;
+			// **********************************************************************
+
+			// **********************************************************************
+			// Get the dot product of gradient and distance
+			// This outputs the direction of the gradients for the corners
 
 			// Get the distance from the position to each corner
-			// Convert the position into the cube location so each axis is between 0 and 1
+			// Convert the position into the square location so each axis is between 0 and 1
 			Vector2 pos = new Vector2(x - floorX, y - floorY);
 			Vector2 distanceTopLeft = pos - topLeft;
 			Vector2 distanceTopRight = pos - topRight;
 			Vector2 distanceBotLeft = pos - botLeft;
 			Vector2 distanceBotRight = pos - botRight;
 
-			// Get the index to get the correct gradient
+			// Get the index of the correct gradient
 			// This is done by adding together the x and y axis hashes/indexes retrieved before
 			// The x hashed value is added to the y value to get the correct hash value
 			// The mask is then used to prevent overflow
@@ -433,16 +401,21 @@ namespace ProceduralGenerationAddOn
 			int gradientTopLeftIndex = hash[hashLeft + hashTop] & gradientMask;
 			int gradientTopRightIndex = hash[hashRight + hashTop] & gradientMask;
 
-			// The dot product of each distance and gradient
+			// The dot product of each distance and gradient to get directions
 			// The gradient is retrieved from the list of available gradients
 			float dotTopLeft = Vector2.Dot(avaliableGradients[gradientBotLeftIndex], distanceBotLeft);
 			float dotTopRight = Vector2.Dot(avaliableGradients[gradientBotRightIndex], distanceBotRight);
 			float dotBotLeft = Vector2.Dot(avaliableGradients[gradientTopLeftIndex], distanceTopLeft);
 			float dotBotRight = Vector2.Dot(avaliableGradients[gradientTopRightIndex], distanceTopRight);
+			// **********************************************************************
 
-			// Get the fade value to use in the lerp
+			// **********************************************************************
+			// Get the height value
+
+			// Get the fade value to use in the lerp to smooth out the height change
+			// This prevents artefacts (spikes in the terrain)
 			// Use the position locations so the values are not large
-			// And so it matches up with the cube
+			// And so it matches up with the square
 			float fadeX = Fade(pos.x);
 			float fadeY = Fade(pos.y);
 
@@ -456,6 +429,7 @@ namespace ProceduralGenerationAddOn
 
 			// Return the normalised value of the lerps
 			return normalisedHeight;
+			// **********************************************************************
 		}
 
 		/// <summary>
@@ -494,12 +468,12 @@ namespace ProceduralGenerationAddOn
 		public float Fractal(float x, float y)
 		{
 			float height = 0;
-			float frequency = Frequency;
-			float amplitude = Amplitude;
+			float frequency = Frequency; // How spread out the terrain is
+			float amplitude = Amplitude; // How tall the terrain is
 
 			for (int i = 0; i < Octaves; i++)
 			{
-				// Make sure the position it looped tos prevent out of bound errors
+				// Make sure the position it looped to prevent out of bound errors
 				x = LoopPos(x * frequency, m_terrainData.heightmapWidth);
 				y = LoopPos(y * frequency, m_terrainData.heightmapHeight);
 
@@ -537,25 +511,28 @@ namespace ProceduralGenerationAddOn
 		/// <summary>
 		/// Get the terrain in the scene, if there isn't spawn one
 		/// </summary>
-		public void CreateTerrain(bool CreateNewTerrain)
+		/// /// <param name="createNewTerrain">Whether to create a new terrain game object or not</param>
+		public void CreateTerrain(bool createNewTerrain)
 		{
 			// If there is no current terrain
-			if (Terrain.activeTerrain == null || CreateNewTerrain)
+			if (Terrain.activeTerrain == null || createNewTerrain)
 			{
-				// Create the terrain data with the default data
+				// Create the terrain with the data
 				GameObject createdTerrain = Terrain.CreateTerrainGameObject(m_terrainData);
 
 				// Attach the PerlinNoiseTerrain to the terrain so the editor can find it
 				// When the user wants to delete it
 				createdTerrain.AddComponent<GeneratedTerrain>();
 			}
+			// If there is a terrain just set the new data to it to change it
 			else Terrain.activeTerrain.terrainData = m_terrainData;
 		}
 
 		/// <summary>
 		/// Create the terrain with Perlin Noise
+		/// <param name="createNewTerrain">Whether to create a new terrain game object or not</param>
 		/// </summary>
-		public void SetTerrainData(bool CreateNewTerrain)
+		public void SetTerrainData(bool createNewTerrain)
 		{
 			// Set the heightmap res and terrain size here or else it won't change
 			// Can't do it in the property because it will randomly delete the level heightmap
@@ -577,6 +554,7 @@ namespace ProceduralGenerationAddOn
 				for (int y = 0; y < maxY; y++)
 				{
 					// Make sure the height map doesn't follow the grid 1 for 1
+					// Since we want multiple values in the same square to get a smoother terrain
 					xLocation = ((float)x / maxX) + m_posOffset.x;
 					yLocation = ((float)y / maxY) + m_posOffset.y;
 
@@ -589,9 +567,41 @@ namespace ProceduralGenerationAddOn
 			m_terrainData.SetHeights(heightMapBaseX, heightMapBaseY, heights);
 
 			// Create the terrain with the new height map
-			CreateTerrain(CreateNewTerrain);
+			CreateTerrain(createNewTerrain);
 		}
 
+		#endregion
+
+		#region Other Functions
+		/// <summary>
+		/// Check if value is less than 0
+		/// Used by the properties
+		/// </summary>
+		/// <param name="value">Value to check</param>
+		/// <returns>The checked value</returns>
+		public float CheckIfValueIsLessThanZero(float value)
+		{
+			if (value < 0) value = 0;
+			return value;
+		}
+
+		/// <summary>
+		/// Reset all variables the user can change back to their defaults
+		/// </summary>
+		public void ResetVariableValues()
+		{
+			m_terrainSize = new Vector3(defaultTerrainXSize, defaultTerrainYSize, defaultTerrainZSize);
+			m_posOffset = new Vector2(defaultXOffset, defaultYOffset);
+			m_heightmapResolution = defaultHeightmapRes;
+			m_multiplyFade = defaultMultiplyFade;
+			m_minusFade = defaultMinusFade;
+			m_additionFade = defaultAdditionFade;
+			m_octaves = defaultOctaves;
+			m_frequency = defaultFrequency;
+			m_amplitude = defaultAmplitude;
+			m_amplitudeGain = defaultAmplitudeGain;
+			m_lacunarity = defaultLacunarity;
+		}
 		#endregion
 	}
 }

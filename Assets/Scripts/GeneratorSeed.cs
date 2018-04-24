@@ -1,15 +1,9 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   22/04/2018
+//	Last Edited On:	   24/04/2018
 //	File:			   GeneratorSeed.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
-
-////////////////////////////////////////////
-// Libraries and namespaces
-using UnityEngine;
-
-////////////////////////////////////////////
 
 /// <summary>
 /// This class is responsible for the seed that is used for the generation.
@@ -23,24 +17,25 @@ namespace ProceduralGenerationAddOn
 		#region Constants
 		const int makeBase0 = 1;
 		const int goToNextVariable = 1;
+		const int removeLengthInt = 1;
 		#endregion
 
 		#region Variables
-		string m_seed = "0";
+		string m_seedValue = "0"; // Seed has to be a string because the length is too big for an int
 		protected int m_numOfVariablesUserCanChange;
 		#endregion
 
 		#region Properties
-		public string Seed
+		public string SeedValue
 		{
 			get
 			{
-				return m_seed;
+				return m_seedValue;
 			}
 
 			set
 			{
-				m_seed = value;
+				m_seedValue = value;
 			}
 		}
 		#endregion
@@ -48,52 +43,59 @@ namespace ProceduralGenerationAddOn
 		/// <summary>
 		/// Set the passed seed to the variables for the generation
 		/// </summary>
-		/// <param name="newSeed">The new seed</param>
-		public void SetSeedToVariables(string newSeed)
+		/// <param name="newSeedValue">The new seed</param>
+		public void SetSeedToVariables(string newSeedValue)
 		{
 			// Don't need to change the variables if they are the same
-			// Make sure the length is correct (is num of variable *2 because of the length num)
-			if (m_seed == newSeed) return;
+			if (m_seedValue == newSeedValue) return;
 
 			int numCheckValue = 0;
 			bool numCheck;
 
-			// Go through seed
-			for (int i = 0; i < newSeed.Length; i++)
+			// Go through seed and check the characters in it are all valid
+			for (int i = 0; i < newSeedValue.Length; i++)
 			{
 				// Check if it's a number
-				numCheck = int.TryParse(newSeed[i].ToString(), out numCheckValue);
+				numCheck = int.TryParse(newSeedValue[i].ToString(), out numCheckValue);
 
 				// If it isn't a number check if it is a - for negative number or . for decimal points
 				// If it isn't one of them there is an incorrect character so don't set the variable to the seed
 				if (!numCheck)
 				{
-					if (newSeed[i] != '-' && newSeed[i] != '.') return;
+					if (newSeedValue[i] != '-' && newSeedValue[i] != '.') return;
 				}
 			}
 
 			// -1 the length because it starts at base 0
-			int indexLower = newSeed.Length - makeBase0;
-			int indexUpper = newSeed.Length - makeBase0;
+			int indexLower = newSeedValue.Length - makeBase0;
+			int indexUpper = newSeedValue.Length - makeBase0;
 			string numberString = "";
 			float numberFloat = 0;
+			string valueString = newSeedValue;
 
-			string valueString = newSeed;
+			// ************************************************************************************
+			// The seeds work by having a number which tells the class the size of the value to get
+			// For example: 1123, the 3 tells the class the next 3 numbers are for the variable
+			// So the variable will be set to 112
+			// ************************************************************************************
 
-			// Go through all variables the user can change
-			// TODO why -1???
-			for (int i = m_numOfVariablesUserCanChange - 1; i >= 0; i--)
+			// Go through all variables the user can change set the values to the correct variables
+			// -1 the num of variables that can be changed because the last value is at 0 and not 1
+			for (int i = m_numOfVariablesUserCanChange - makeBase0; i >= 0; i--)
 			{
-				// Find where the variable value gets cut off
+				// Get the first int of the seed
+				// This is used to find the length of the variable value
 				indexLower -= (int)char.GetNumericValue(valueString[indexLower]);
 
-				// Get the variable value
-				for (int j = indexLower; j <= indexUpper - 1; j++)
+				// Get the variable value by adding each int in the string together
+				// Goes from left to right so the number is in the correct order
+				// -1 from the upper so it does not get the in used to get the length of the variable value
+				for (int j = indexLower; j <= indexUpper - removeLengthInt; j++)
 				{
 					numberString += valueString[j];
 				}
 
-				// Change it to an int and set it to the correct variables
+				// Change it to an int and set it to the correct variable
 				numberFloat = float.Parse(numberString);
 				SetUserVariable(i, numberFloat);
 
@@ -106,7 +108,8 @@ namespace ProceduralGenerationAddOn
 				numberString = "";
 			}
 
-			m_seed = newSeed;
+            // Set new seed
+			m_seedValue = newSeedValue;
 		}
 
 		/// <summary>
@@ -121,7 +124,7 @@ namespace ProceduralGenerationAddOn
 			// Get all variable values
 			for (int i = 0; i < m_numOfVariablesUserCanChange; i++)
 			{
-				// Convert the variable to string so the length of it can be added to the end of it
+				// Convert the variable to string so the length of it can be added to the seed
 				variableValueString = GetUserVariable(i).ToString();
 				variableValueString += variableValueString.Length.ToString();
 
@@ -129,10 +132,11 @@ namespace ProceduralGenerationAddOn
 				seedValue += variableValueString;
 			}
 
-			// Convert the value to an int and set it to the seed
-			m_seed = seedValue;
+			// Save the new seed
+			m_seedValue = seedValue;
 
-			return m_seed;
+            // Need to ouput the seed for the tempSeed in the editor window
+			return m_seedValue;
 		}
 
 		/// <summary>

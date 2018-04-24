@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   23/04/2018
+//	Last Edited On:	   24/04/2018
 //	File:			   ProceduralGenerationEditorWindow.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -36,7 +36,7 @@ namespace ProceduralGenerationAddOn
 
         #region Variables
         int m_levelType = 0;
-        string[] m_levelTypeOptions = { "Terrain", "Dungeon" };
+        static string[] m_levelTypeOptions;
         ProceduralGenerationAlgorithmGUI m_gui;
         static PerlinNoise m_perlinNoise;
         static PerlinNoiseGUI m_perlinNoiseGUI;
@@ -56,6 +56,7 @@ namespace ProceduralGenerationAddOn
 
         /// <summary>
         /// How to display the window
+        /// Needs to be static or else it will not show in the editor
         /// </summary>
         public static void ShowWindow()
         {
@@ -65,6 +66,15 @@ namespace ProceduralGenerationAddOn
             // The min size the window can be
             // This is so the window shows the header text when it is created
             procGenWindow.minSize = new Vector2(minWindowSize, minWindowSize);
+
+            // Set the different types of levels based on the LevelTypes enum values
+            int numOfLevelTypes = (int)LevelTypes.NUMOFLEVELTYPES;
+            m_levelTypeOptions = new string[numOfLevelTypes];
+            for (int i = 0; i < numOfLevelTypes; i++)
+            {
+                // Convert the int to the LevelType enum value then to string
+                m_levelTypeOptions[i] = ((LevelTypes)i).ToString();
+            }
 
             // Create the styles for the window
             CreateStyles();
@@ -103,7 +113,7 @@ namespace ProceduralGenerationAddOn
         }
 
         /// <summary>
-        /// The perlin noise auto update if it's enabled
+        /// If it's enabled, auto generate the level
         /// </summary>
         private void Update()
         {
@@ -125,11 +135,11 @@ namespace ProceduralGenerationAddOn
             GUILayout.Label("Hover over the variable name for information on what they change.");
             EditorGUILayout.Space();
 
-            // Dropdown box to select the level 
+            // Drop down box to select the level 
             m_levelType = EditorGUILayout.Popup("Level Type:", m_levelType, m_levelTypeOptions);
             GUILayout.Space(dropdownSpaceHeight);
 
-            // Based on the level selected, select the correct level type variables
+            // Based on the level selected, set the correct GUI to display
             switch (m_levelType)
             {
                 case (int)LevelTypes.TERRAIN:
@@ -146,7 +156,7 @@ namespace ProceduralGenerationAddOn
             // Display the selected level type's GUI
             m_gui.DisplayGUI();
 
-            // Don't need the button if the level isn't be updated in real-time
+            // Don't need the buttons if the level is being updated in real-time
             if (!m_gui.RealTimeGenerationActive)
             {               
                 // Create the level using the existing GameObject

@@ -28,7 +28,7 @@ namespace ProceduralGenerationAddOn
 
         #region Variables
         string m_headerTitle;
-        string m_tempSeed;
+        string m_tempSeedValue;
         GeneratorSeed m_seed;
         protected bool m_allowRealTimeGeneration = false;
         protected bool m_realTimeGenerationActive = false;
@@ -66,7 +66,7 @@ namespace ProceduralGenerationAddOn
             m_header3Style = header3;
             m_header4Style = header4;
             m_seed = seed;
-            m_tempSeed = m_seed.Seed;
+            m_tempSeedValue = m_seed.SeedValue;
             m_headerTitle = headerTitle;
         }
 
@@ -94,8 +94,9 @@ namespace ProceduralGenerationAddOn
             fieldText = "Seed: ";
             tooltip = "The seed of the current variables values";
             GUI.SetNextControlName("Seed Field"); // Set a name for the seed field to check if it's highlighted (look at the end of the function)
-                                                  // Use a temp seed so the seed only changes when the user is not currently editing it/highlighted it
-            m_tempSeed = EditorGUILayout.TextField(new GUIContent(fieldText, tooltip), m_tempSeed);
+            // Use a temp seed so the seed only changes when the user is not currently editing it/highlighted
+            // Without this errors will produce if the user is changing the seed manually
+            m_tempSeedValue = EditorGUILayout.TextField(new GUIContent(fieldText, tooltip), m_tempSeedValue);
 
             // If the seed field is not selected
             if (GUI.GetNameOfFocusedControl() != "Seed Field")
@@ -103,12 +104,12 @@ namespace ProceduralGenerationAddOn
                 // If the temp seed is different to the actual seed, make them the same
                 // This is done when the field is not selected so if the user removes a number it does not produce an error
                 // The if statement is required because there is no reason to change the seed if they are the same
-                if (m_tempSeed != m_seed.Seed) m_seed.SetSeedToVariables(m_tempSeed);
+                if (m_tempSeedValue != m_seed.SeedValue) m_seed.SetSeedToVariables(m_tempSeedValue);
 
                 // Set the variable values to the seed values and set temp seed to the actual seed
                 // This is done when the field is not selected because we don't want incorrect numbers appearing on the variables
                 // When the user is moving around seed values
-                m_tempSeed = m_seed.UpdateSeed();
+                m_tempSeedValue = m_seed.UpdateSeed();
             }
 
             EditorGUILayout.Space();

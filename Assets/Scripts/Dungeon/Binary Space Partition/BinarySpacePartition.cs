@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   23/04/2018
+//	Last Edited On:	   24/04/2018
 //	File:			   BinarySpacePartition.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -13,7 +13,7 @@ using System.Collections.Generic;
 ////////////////////////////////////////////
 
 /// <summary>
-/// Class for binary space partition (BSP)
+/// The class that includes the Binary Space Partition functionality
 /// </summary>
 namespace ProceduralGenerationAddOn
 {
@@ -118,7 +118,7 @@ namespace ProceduralGenerationAddOn
             {
                 // Can't have the split amount be below 0
                 // Or nothing will happen and will error
-                if (value < minimumSplitAmount) value = minimumSplitAmount;
+                value = CheckIfValueIsLess(value, minimumSplitAmount);
                 m_splitAmount = value;
             }
         }
@@ -133,7 +133,7 @@ namespace ProceduralGenerationAddOn
             set
             {
                 // Can't have the size be below 2 because it produce out of bound errors
-                if (value < minimumCellSize) value = minimumCellSize;
+                value = CheckIfValueIsLess(value, minimumCellSize);
 
                 // Set the max value because if it goes above it, it can cause errors
                 float lowestDungeonSize = m_dungeonSize.x;
@@ -232,16 +232,10 @@ namespace ProceduralGenerationAddOn
                 return m_seed;
             }
         }
-
-        public string SeedValue
-        {
-            get
-            {
-                return m_seed.Seed;
-            }
-        }
         #endregion
 
+        // Functions
+        #region Binary Space Partition Functions
         /// <summary>
         /// Constructor
         /// </summary>
@@ -249,17 +243,6 @@ namespace ProceduralGenerationAddOn
         {
             m_seed = new BinarySpacePartitionSeed(this);
             m_seed.UpdateSeed();
-        }
-
-        /// <summary>
-        /// Reset all variables the user can change back to their defaults
-        /// </summary>
-        public void ResetVariableValues()
-        {
-            m_dungeonSize = new Vector3(defaultDungeonSizeXZ, defaultDungeonSizeY, defaultDungeonSizeXZ);
-            m_splitAmount = defaultSplitAmount;
-            m_minimumCellSize = defaultMinCellSize;
-            m_minimumRoomSize = defaultMinRoomSize;
         }
 
         /// <summary>
@@ -375,6 +358,7 @@ namespace ProceduralGenerationAddOn
                 m_spawnGrid[x, y] = wallGridNum;
             }
         }
+        #endregion
 
         #region Spawning functions
 
@@ -408,7 +392,7 @@ namespace ProceduralGenerationAddOn
             // To get rid of the current dungeon tiles
             if(reUseGameObject && m_dungeonParent != null)
             {
-                // Need to get the value before the loop since it changes each time a chikd is destroyed
+                // Need to get the value before the loop since it changes each time a child is destroyed
                 int numberOfChildren = m_dungeonParent.transform.childCount;
 
                 for (int i = 0; i < numberOfChildren; i++)
@@ -505,6 +489,32 @@ namespace ProceduralGenerationAddOn
             return parent;
         }
 
+        #endregion
+
+        #region Other Functions
+        /// <summary>
+        /// Check if value is less than a number
+        /// Used by the properties
+        /// </summary>
+        /// <param name="value">Value to check</param>
+        /// <param name="lessThan">The number to check if the value is less than</param>
+        /// <returns>The checked value</returns>
+        public int CheckIfValueIsLess(int value, int lessThan)
+        {
+            if (value < lessThan) value = lessThan;
+            return value;
+        }
+
+        /// <summary>
+        /// Reset all variables the user can change back to their defaults
+        /// </summary>
+        public void ResetVariableValues()
+        {
+            m_dungeonSize = new Vector3(defaultDungeonSizeXZ, defaultDungeonSizeY, defaultDungeonSizeXZ);
+            m_splitAmount = defaultSplitAmount;
+            m_minimumCellSize = defaultMinCellSize;
+            m_minimumRoomSize = defaultMinRoomSize;
+        }
         #endregion
     }
 }
