@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   24/04/2018
+//	Last Edited On:	   29/04/2018
 //	File:			   GeneratorSeed.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -47,7 +47,8 @@ namespace ProceduralGenerationAddOn
 		public void SetSeedToVariables(string newSeedValue)
 		{
 			// Don't need to change the variables if they are the same
-			if (m_seedValue == newSeedValue) return;
+			// If the seed length is less than the number of variables * 2 then the value does not follow the seed format
+			if (m_seedValue == newSeedValue || newSeedValue.Length < m_numOfVariablesUserCanChange * 2) return;
 
 			int numCheckValue = 0;
 			bool numCheck;
@@ -82,18 +83,31 @@ namespace ProceduralGenerationAddOn
 			// Go through all variables the user can change set the values to the correct variables
 			// -1 the num of variables that can be changed because the last value is at 0 and not 1
 			for (int i = m_numOfVariablesUserCanChange - makeBase0; i >= 0; i--)
-			{
+			{                
+				// If the index get lower than 0 the seed value format is wrong so exit
+                // Maje sure - or . is not the value for the number length
+				if (indexLower < 0 || valueString[indexLower] == '-' || valueString[indexLower] == '.') return;
+
 				// Get the first int of the seed
 				// This is used to find the length of the variable value
 				indexLower -= (int)char.GetNumericValue(valueString[indexLower]);
 
+                // Make sure the new lower index is not out of bounds
+				if (indexLower < 0) return;
+
 				// Get the variable value by adding each int in the string together
 				// Goes from left to right so the number is in the correct order
 				// -1 from the upper so it does not get the in used to get the length of the variable value
-				for (int j = indexLower; j <= indexUpper - removeLengthInt; j++)
+					for (int j = indexLower; j <= indexUpper - removeLengthInt; j++)
 				{
+                    // Make sure - is not in the incorrect place
+					if (j != indexLower)
+						if (valueString[j] == '-') return;
 					numberString += valueString[j];
 				}
+
+                // Make sure the number is not blank, just - or .
+				if (numberString == "" || numberString == "-" || numberString == ".") return;
 
 				// Change it to an int and set it to the correct variable
 				numberFloat = float.Parse(numberString);
@@ -108,7 +122,7 @@ namespace ProceduralGenerationAddOn
 				numberString = "";
 			}
 
-            // Set new seed
+			// Set new seed
 			m_seedValue = newSeedValue;
 		}
 
@@ -135,7 +149,7 @@ namespace ProceduralGenerationAddOn
 			// Save the new seed
 			m_seedValue = seedValue;
 
-            // Need to ouput the seed for the tempSeed in the editor window
+			// Need to ouput the seed for the tempSeed in the editor window
 			return m_seedValue;
 		}
 

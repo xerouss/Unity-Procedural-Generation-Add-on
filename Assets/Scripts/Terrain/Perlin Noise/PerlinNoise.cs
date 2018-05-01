@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   24/04/2018
+//	Last Edited On:	   29/04/2018
 //	File:			   PerlinNoise.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -16,7 +16,7 @@ using UnityEngine;
 /// </summary>
 namespace ProceduralGenerationAddOn
 {
-	public class PerlinNoise
+	public class PerlinNoise : ProceduralGenerationAlgorithm
 	{
 		#region Constants
 		// Defaults
@@ -29,13 +29,15 @@ namespace ProceduralGenerationAddOn
 		const int defaultMultiplyFade = 6;
 		const int defaultMinusFade = 15;
 		const int defaultAdditionFade = 10;
+        const int defaultMinValue = 0;
 
-		// FBM defaults
-		const float defaultOctaves = 1;
+        // FBM 
+        const float defaultOctaves = 1;
 		const float defaultFrequency = 6;
 		const float defaultAmplitude = 1;
 		const float defaultAmplitudeGain = 1;
 		const float defaultLacunarity = 2;
+        const int maxOctaves = 10;
 
 		// Normalise
 		const float normaliseMin = -1;
@@ -46,9 +48,13 @@ namespace ProceduralGenerationAddOn
 		const int terrainResPerBatch = 8;
 		const int heightMapBaseX = 0;
 		const int heightMapBaseY = 0;
+		const int maxTerrainSize = 100000;
+		const int minTerrainYSize = -100000;
+        public const int heightmapResLowerBound = 0;
+        public const int heightmapResHigherBound = 256;
 
-		// Bit masks to prevent overflow of the array
-		const int hashMask = 511;
+        // Bit masks to prevent overflow of the array
+        const int hashMask = 511;
 		const int gradientMask = 7;
 
 		// The positions of the points in the square
@@ -82,7 +88,8 @@ namespace ProceduralGenerationAddOn
 			129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,104,218,246,97,228,
 			251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,
 			49,192,214,31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,
-			138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,151,160,137,91,90,15,
+			138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180,
+            151,160,137,91,90,15,
 			131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
 			190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
 			88,237,149,56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,27,166,
@@ -132,7 +139,9 @@ namespace ProceduralGenerationAddOn
 
 			set
 			{
-				m_terrainSize = value;
+				TerrainSizeX = value.x;
+				TerrainSizeY = value.y;
+				TerrainSizeZ = value.z;
 			}
 		}
 
@@ -141,7 +150,9 @@ namespace ProceduralGenerationAddOn
 		{
 			set
 			{
-				m_terrainSize.x = value;
+				// Prevent extreme values
+				// Make sure the x don't go below 0 since it makes the terrain inside out
+				m_terrainSize.x = CheckIfValueIsInbetween(value, defaultMinValue, maxTerrainSize);
 			}
 		}
 
@@ -149,7 +160,8 @@ namespace ProceduralGenerationAddOn
 		{
 			set
 			{
-				m_terrainSize.y = value;
+				// Prevent extreme values
+				m_terrainSize.y = CheckIfValueIsInbetween(value, minTerrainYSize, maxTerrainSize);
 			}
 		}
 
@@ -157,7 +169,9 @@ namespace ProceduralGenerationAddOn
 		{
 			set
 			{
-				m_terrainSize.z = value;
+				// Prevent extreme values
+				// Make sure the z don't go below 0 since it makes the terrain inside out
+				m_terrainSize.z = CheckIfValueIsInbetween(value, defaultMinValue, maxTerrainSize);
 			}
 		}
 
@@ -223,6 +237,9 @@ namespace ProceduralGenerationAddOn
 
 			set
 			{
+				// Less than 0 does nothing so cap it
+                // Cap the max value or else it can crash the editor
+				value = CheckIfValueIsInbetween(value, defaultMinValue, maxOctaves);
 				m_octaves = value;
 			}
 		}
@@ -236,6 +253,8 @@ namespace ProceduralGenerationAddOn
 
 			set
 			{
+				// Having less than 0 produces an error
+				value = CheckIfValueIsLess(value, defaultMinValue);
 				m_frequency = value;
 			}
 		}
@@ -249,7 +268,9 @@ namespace ProceduralGenerationAddOn
 
 			set
 			{
-				m_amplitude = value;
+                // Having less than 0 does nothing
+                value = CheckIfValueIsLess(value, defaultMinValue);
+                m_amplitude = value;
 			}
 		}
 
@@ -263,7 +284,7 @@ namespace ProceduralGenerationAddOn
 			set
 			{
 				// Having less than 0 does nothing
-				value = CheckIfValueIsLessThanZero(value);
+				value = CheckIfValueIsLess(value, defaultMinValue);
 				m_amplitudeGain = value;
 			}
 		}
@@ -278,7 +299,7 @@ namespace ProceduralGenerationAddOn
 			set
 			{
 				// Causes errors if less than 0 so make sure it doesn't go below it
-				value = CheckIfValueIsLessThanZero(value);
+				value = CheckIfValueIsLess(value, defaultMinValue);
 				m_lacunarity = value;
 			}
 		}
@@ -293,8 +314,8 @@ namespace ProceduralGenerationAddOn
 			set
 			{
 				// Make sure the offset doesn't go less than 0 since it produces an error
-				value.x = CheckIfValueIsLessThanZero(value.x);
-				value.y = CheckIfValueIsLessThanZero(value.y);
+				value.x = CheckIfValueIsLess(value.x, defaultMinValue);
+				value.y = CheckIfValueIsLess(value.y, defaultMinValue);
 
 				m_posOffset = value;
 			}
@@ -306,7 +327,7 @@ namespace ProceduralGenerationAddOn
 			set
 			{
 				// Make sure the offset doesn't go less than 0 since it produces an error
-				value = CheckIfValueIsLessThanZero(value);
+				value = CheckIfValueIsLess(value, defaultMinValue);
 				m_posOffset.x = value;
 			}
 		}
@@ -316,7 +337,7 @@ namespace ProceduralGenerationAddOn
 			set
 			{
 				// Make sure the offset doesn't go less than 0 since it produces an error
-				value = CheckIfValueIsLessThanZero(value);
+				value = CheckIfValueIsLess(value, defaultMinValue);
 				m_posOffset.y = value;
 			}
 		}
@@ -346,13 +367,14 @@ namespace ProceduralGenerationAddOn
 			m_seed.UpdateSeed();
 		}
 
-		/// <summary>
-		/// Calculate the height value of the location using Perlin Noise
-		/// </summary>
-		/// <param name="x">X location</param>
-		/// <param name="y">Y location</param>
-		/// <returns>Height</returns>
-		public float Perlin(float x, float y)
+        /// <summary>
+        /// Calculate the height value of the location using Perlin Noise
+        /// Used http://catlikecoding.com/unity/tutorials/noise/ to help with the hash values
+        /// </summary>
+        /// <param name="x">X location</param>
+        /// <param name="y">Y location</param>
+        /// <returns>Height</returns>
+        public float Perlin(float x, float y)
 		{
 			// The perlin noise works by getting the square corners which the passed location is in
 			// These square corners each have gradients and based on the distance between
@@ -398,8 +420,8 @@ namespace ProceduralGenerationAddOn
 			// The mask is then used to prevent overflow
 			int gradientBotLeftIndex = hash[hashLeft + hashBot] & gradientMask;
 			int gradientBotRightIndex = hash[hashRight + hashBot] & gradientMask;
-			int gradientTopLeftIndex = hash[hashLeft + hashTop] & gradientMask;
-			int gradientTopRightIndex = hash[hashRight + hashTop] & gradientMask;
+            int gradientTopLeftIndex = hash[hashLeft + hashTop] & gradientMask;
+            int gradientTopRightIndex = hash[hashRight + hashTop] & gradientMask;
 
 			// The dot product of each distance and gradient to get directions
 			// The gradient is retrieved from the list of available gradients
@@ -495,6 +517,7 @@ namespace ProceduralGenerationAddOn
 		/// <returns>Position</returns>
 		public float LoopPos(float value, int max)
 		{
+            max--;
 			if (value >= max)
 			{
 				// Reduce the max from it so it goes back to the start
@@ -574,21 +597,9 @@ namespace ProceduralGenerationAddOn
 
 		#region Other Functions
 		/// <summary>
-		/// Check if value is less than 0
-		/// Used by the properties
-		/// </summary>
-		/// <param name="value">Value to check</param>
-		/// <returns>The checked value</returns>
-		public float CheckIfValueIsLessThanZero(float value)
-		{
-			if (value < 0) value = 0;
-			return value;
-		}
-
-		/// <summary>
 		/// Reset all variables the user can change back to their defaults
 		/// </summary>
-		public void ResetVariableValues()
+		public override void ResetVariableValues()
 		{
 			m_terrainSize = new Vector3(defaultTerrainXSize, defaultTerrainYSize, defaultTerrainZSize);
 			m_posOffset = new Vector2(defaultXOffset, defaultYOffset);

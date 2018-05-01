@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   24/04/2018
+//	Last Edited On:	   28/04/2018
 //	File:			   BinarySpacePartition.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -17,9 +17,9 @@ using System.Collections.Generic;
 /// </summary>
 namespace ProceduralGenerationAddOn
 {
-    public class BinarySpacePartition
+    public class BinarySpacePartition: ProceduralGenerationAlgorithm
     {
-        #region constants
+        #region Constants
 
         public const int emptyGridNum = 0;
         public const int roomGridNum = 1;
@@ -32,6 +32,11 @@ namespace ProceduralGenerationAddOn
         const int offsetToPreventOutOfBounds = 2;
         const int ySpawningPos = 1;
         const int empty = 0;
+        const int spawnAboveTheFloor = 1;
+        const int spawnAboveTheWall = 2;
+        const int maxTerrainSize = 100;
+        const int minTerrainSize = 0;
+        const int tileSize = 1;
 
         // Defaults
         const int defaultDungeonSizeXZ = 20;
@@ -42,6 +47,7 @@ namespace ProceduralGenerationAddOn
 
         // Minimum Values
         const int minimumSplitAmount = 0;
+        const int maxSplitAmount = 100;
         const int minimumCellSize = 2;
         #endregion
 
@@ -54,6 +60,9 @@ namespace ProceduralGenerationAddOn
         GameObject m_dungeonWallParent;
         GameObject m_dungeonRoomParent;
         GameObject m_dungeonRoofParent;
+        int m_dungeonSizeXInt;
+        int m_dungeonSizeYInt;
+        int m_dungeonSizeZInt;
 
         // User Variables
         Vector3 m_dungeonSize = new Vector3(defaultDungeonSizeXZ, defaultDungeonSizeY, defaultDungeonSizeXZ);
@@ -78,7 +87,9 @@ namespace ProceduralGenerationAddOn
 
             set
             {
-                m_dungeonSize = value;
+                DungeonSizeX = value.x;
+                DungeonSizeY = value.y;
+                DungeonSizeZ = value.z;
             }
         }
 
@@ -87,7 +98,9 @@ namespace ProceduralGenerationAddOn
         {
             set
             {
-                m_dungeonSize.x = value;
+                // Prevent extreme high values and error from negative numbers
+                m_dungeonSize.x = CheckIfValueIsInbetween(value, 
+                    minTerrainSize, maxTerrainSize);
             }
         }
 
@@ -95,7 +108,9 @@ namespace ProceduralGenerationAddOn
         {
             set
             {
-                m_dungeonSize.y = value;
+                // Prevent extreme high values and error from negative numbers
+                m_dungeonSize.y = CheckIfValueIsInbetween(value,
+                    minTerrainSize, maxTerrainSize);
             }
         }
 
@@ -103,7 +118,9 @@ namespace ProceduralGenerationAddOn
         {
             set
             {
-                m_dungeonSize.z = value;
+                // Prevent extreme high values and error from negative numbers
+                m_dungeonSize.z = CheckIfValueIsInbetween(value,
+                    minTerrainSize, maxTerrainSize);
             }
         }
 
@@ -118,7 +135,8 @@ namespace ProceduralGenerationAddOn
             {
                 // Can't have the split amount be below 0
                 // Or nothing will happen and will error
-                value = CheckIfValueIsLess(value, minimumSplitAmount);
+                // High calue can freeze the editor
+                value = (int)CheckIfValueIsInbetween(value, minimumSplitAmount, maxSplitAmount);
                 m_splitAmount = value;
             }
         }
@@ -133,7 +151,7 @@ namespace ProceduralGenerationAddOn
             set
             {
                 // Can't have the size be below 2 because it produce out of bound errors
-                value = CheckIfValueIsLess(value, minimumCellSize);
+                value = (int)CheckIfValueIsLess(value, minimumCellSize);
 
                 // Set the max value because if it goes above it, it can cause errors
                 float lowestDungeonSize = m_dungeonSize.x;
@@ -141,7 +159,7 @@ namespace ProceduralGenerationAddOn
 
                 // The formula was found via trial and error and seems to work correctly
                 lowestDungeonSize = (lowestDungeonSize / 2) - 1;
-                if (value > lowestDungeonSize) value = (int)lowestDungeonSize;
+                value = (int)CheckIfValueIsMore(value, (int)lowestDungeonSize);
 
                 m_minimumCellSize = value;
             }
@@ -208,6 +226,9 @@ namespace ProceduralGenerationAddOn
 
             set
             {
+                // Max needs to be the current minimum cell size or the rooms will go
+                // Out of bounds and cause an error
+                value = (int)CheckIfValueIsMore(value, m_minimumCellSize);
                 m_minimumRoomSize = value;
             }
         }
@@ -264,9 +285,16 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public void InitialiseDungeon()
         {
+            // Round the dungeon size numbers
+            // Without this when the size is a decimal point it can cause creation
+            // Of non-connecting dungeons due to inaccurate locations
+            m_dungeonSizeXInt = Mathf.FloorToInt(m_dungeonSize.x);
+            m_dungeonSizeYInt = Mathf.FloorToInt(m_dungeonSize.y);
+            m_dungeonSizeZInt = Mathf.FloorToInt(m_dungeonSize.z);
+
             // +2 on both axis to get free space for the walls without going out of bounds
             // Its +2 instead of +1 since the bot left corner is set to 1,1 so the base is 1
-            m_spawnGrid = new int[(int)m_dungeonSize.x + offsetToPreventOutOfBounds, (int)m_dungeonSize.z + offsetToPreventOutOfBounds];
+            m_spawnGrid = new int[m_dungeonSizeXInt + offsetToPreventOutOfBounds, m_dungeonSizeZInt + offsetToPreventOutOfBounds];
         }
 
         /// <summary>
@@ -283,10 +311,10 @@ namespace ProceduralGenerationAddOn
             Vector2 rootBotLeftCorner = new Vector2(botCornerOffsetForWall, botCornerOffsetForWall);
 
             // Need to +1 the centre or the child nodes won't line up correctly and won't connect to the root with corridors due to the (1, 1) bot corner
-            Vector2 rootCentre = new Vector2((m_dungeonSize.x / getCentre) + botCornerOffsetForWall, (m_dungeonSize.z / getCentre) + botCornerOffsetForWall);
+            Vector2 rootCentre = new Vector2((m_dungeonSizeXInt / getCentre) + botCornerOffsetForWall, (m_dungeonSizeZInt / getCentre) + botCornerOffsetForWall);
 
             // Create the root and add it to the tree
-            m_treeRootNode = new BinarySpacePartitionTreeNode(rootCentre, (int)m_dungeonSize.x, (int)m_dungeonSize.z, rootBotLeftCorner, ref m_spawnGrid, this);
+            m_treeRootNode = new BinarySpacePartitionTreeNode(rootCentre, m_dungeonSizeXInt, m_dungeonSizeZInt, rootBotLeftCorner, ref m_spawnGrid, this);
             splitQueue.Enqueue(m_treeRootNode);
 
             for (int i = 0; i < m_splitAmount; i++)
@@ -368,12 +396,9 @@ namespace ProceduralGenerationAddOn
         /// <param name="reUseGameObject">If the user wants to create a new dungeon using an exciting game object</param>
         public void OutputDungeon(bool reUseGameObject)
         {
-            // Check if the user has inputted the tiles or not
-            if(m_floorTile == null || m_corridorTile == null || m_wallTile == null)
-            {
-                Debug.Log("** MISSING TILE **| Please input the desired tiles in the tile fields.");
-                return;
-            }
+            // Make sure all tile sizes are the same and are inputted
+            // If not exit the output since they will spawn incorrectly
+            if (CheckTile() == false) return;
 
             // If the user deletes the previous dungeon so the  dungeonParent is now null
             // Check if there is any other dungeons to recreate on
@@ -431,13 +456,16 @@ namespace ProceduralGenerationAddOn
                             break;
                         case wallGridNum:
                             // Stack up the walls to make the rooms 3D
-                            for (int y = 1; y < m_dungeonSize.y; y++)
+                            // Starts spawning at ySpawningPos + 1 so it is 1 tile above the floor
+                            // Without the +1 it will spawn on the same level and the bottom title won't be seen
+                            // Have to +1 the y dungeon size or else it will spawn 1 less block because of the +1 on the starting value
+                            for (int y = ySpawningPos + spawnAboveTheFloor; y <= m_dungeonSizeYInt + spawnAboveTheFloor; y++)
                             {
                                 GameObject.Instantiate(m_wallTile, new Vector3(x, y, z), m_wallTile.transform.rotation, m_dungeonWallParent.transform);
                             }
                             break;
                         default:
-                            Debug.Log("ERROR: Incorrect spawn grid number!");
+                            // For the empty tile number (0)
                             break;
                     }
                 }
@@ -468,7 +496,9 @@ namespace ProceduralGenerationAddOn
         {
             if(m_spawnRoof)
             {
-                GameObject.Instantiate(m_roofTile, new Vector3(x, m_dungeonSize.y, z), m_corridorTile.transform.rotation, parent);
+                // + 2 the y since the wall is +1 to spawn above the floor and the other +1 is to spawn above the wall
+                GameObject.Instantiate(m_roofTile, new Vector3(x, m_dungeonSizeYInt + spawnAboveTheWall, z),
+                    m_corridorTile.transform.rotation, parent);
             }
         }
 
@@ -489,26 +519,46 @@ namespace ProceduralGenerationAddOn
             return parent;
         }
 
+        /// <summary>
+        /// Check if all tile sizes are the same or are inputted
+        /// </summary>
+        /// <returns>If all the tile sizes are the same and are inputted</returns>
+        public bool CheckTile()
+        {
+            // Check if the user has inputted the tiles or not
+            if (m_floorTile == null || m_corridorTile == null || m_wallTile == null || (m_roofTile == null && m_spawnRoof))
+            {
+                Debug.Log("** MISSING TILE **| Please input the desired tiles in the tile fields.");
+                return false;
+            }
+
+            GameObject[] tiles = { m_floorTile, m_corridorTile, m_wallTile, m_roofTile };
+
+            for (int i = 1; i < tiles.Length; i++)
+            {
+                // If there is no roof tile and the loop is at the end exit the loop
+                // This is to stop errors trying to get the scale from the null value
+                if (m_roofTile == null && i == tiles.Length - 1) break;
+
+                // Check the if the scales are the same as the tile at [0]
+                if (tiles[i].transform.localScale.x != tileSize || tiles[i].transform.localScale.y != tileSize
+                    || tiles[i].transform.localScale.z != tileSize)
+                {
+                    Debug.Log("** INCORRECT TILE SIZE **| Please make sure all tiles have the scale 1 on all axes.");
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         #endregion
 
         #region Other Functions
         /// <summary>
-        /// Check if value is less than a number
-        /// Used by the properties
-        /// </summary>
-        /// <param name="value">Value to check</param>
-        /// <param name="lessThan">The number to check if the value is less than</param>
-        /// <returns>The checked value</returns>
-        public int CheckIfValueIsLess(int value, int lessThan)
-        {
-            if (value < lessThan) value = lessThan;
-            return value;
-        }
-
-        /// <summary>
         /// Reset all variables the user can change back to their defaults
         /// </summary>
-        public void ResetVariableValues()
+        public override void ResetVariableValues()
         {
             m_dungeonSize = new Vector3(defaultDungeonSizeXZ, defaultDungeonSizeY, defaultDungeonSizeXZ);
             m_splitAmount = defaultSplitAmount;

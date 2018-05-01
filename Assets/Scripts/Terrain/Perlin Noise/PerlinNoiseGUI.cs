@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   23/04/2018
+//	Last Edited On:	   29/04/2018
 //	File:			   PerlinNoiseGUI.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -20,8 +20,6 @@ namespace ProceduralGenerationAddOn
     public class PerlinNoiseGUI : ProceduralGenerationAlgorithmGUI
     {
         #region Constants
-        const int heightmapResLowerBound = 0;
-        const int heightmapResHigherBound = 512;
         const string title = "Terrain";
         const bool dontCreateNewTerrain = false;
         const bool createNewTerrain = true;
@@ -61,10 +59,12 @@ namespace ProceduralGenerationAddOn
             EditorGUILayout.Space();
 
             // Heightmap Resolution
+            // The heightmap resolution has upper and lower bounds to prevent extreme values
+            // High values may caused the editor to crash and negative values errors
             fieldText = "Heightmap Resolution: ";
             tooltip = "How detailed the terrain would be output. The more detailed, the clearer the bends are in the terrain. Higher = more detail. Default = 128";
             m_perlinNoise.HeightmapResolution = EditorGUILayout.IntSlider(new GUIContent(fieldText, tooltip),
-                m_perlinNoise.HeightmapResolution, heightmapResLowerBound, heightmapResHigherBound);
+                m_perlinNoise.HeightmapResolution, PerlinNoise.heightmapResLowerBound, PerlinNoise.heightmapResHigherBound);
             EditorGUILayout.Space();
 
             // Offset
@@ -97,10 +97,11 @@ namespace ProceduralGenerationAddOn
             // *************************************************
             // Fractal
             GUILayout.Label("Fractal Brownian Motion", m_header3Style);
+            if(m_realTimeGenerationActive) GUILayout.Label("When using a high octave amount, turn off real-time generation.", m_header4Style);
 
             // Octaves
             fieldText = "Octaves: ";
-            tooltip = "Amount of times it iterates. More = more detail. May need to turn down frequency as this increases";
+            tooltip = "Amount of times it iterates. More = more detail. May need to turn down frequency as this increases. Turn off real-time generation on high values as it can slow down the editor.";
             m_perlinNoise.Octaves = EditorGUILayout.FloatField(new GUIContent(fieldText, tooltip), m_perlinNoise.Octaves);
 
             // Frequency
@@ -147,7 +148,11 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public override void DeleteLevel()
         {
-            MonoBehaviour.DestroyImmediate(GameObject.FindObjectOfType<GeneratedTerrain>().gameObject);
+            // Check if there is something to delete first or else there will be an error
+            GeneratedTerrain outputtedTerrain = GameObject.FindObjectOfType<GeneratedTerrain>();
+
+            if(outputtedTerrain != null)
+                MonoBehaviour.DestroyImmediate(outputtedTerrain.gameObject);
         }
 
         /// <summary>

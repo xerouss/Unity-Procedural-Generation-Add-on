@@ -1,6 +1,6 @@
 // ***********************************************************************************
 //	Name:	           Stephen Wong
-//	Last Edited On:	   23/04/2018
+//	Last Edited On:	   28/04/2018
 //	File:			   ProceduralGenerationAlgorithmGUI.cs
 //	Project:		   Procedural Generation Add-on
 // ***********************************************************************************
@@ -32,7 +32,6 @@ namespace ProceduralGenerationAddOn
         GeneratorSeed m_seed;
         protected bool m_allowRealTimeGeneration = false;
         protected bool m_realTimeGenerationActive = false;
-        protected string m_typeOfOutputtedLevel;
 
         #region Style Variables
         protected GUIStyle m_header2Style;
@@ -91,6 +90,7 @@ namespace ProceduralGenerationAddOn
             }
 
             // Seed            
+            GUILayout.Label("After inputting a new seed, click off the field in the window to apply it.", m_header4Style);
             fieldText = "Seed: ";
             tooltip = "The seed of the current variables values";
             GUI.SetNextControlName("Seed Field"); // Set a name for the seed field to check if it's highlighted (look at the end of the function)

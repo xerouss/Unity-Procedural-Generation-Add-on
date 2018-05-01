@@ -61,6 +61,7 @@ namespace ProceduralGenerationAddOn
             EditorGUILayout.Space();
 
             // Split Variables
+            GUILayout.Label("The split amount is dependent on the minimum cell size.", m_header4Style);
             fieldText = "Amount of times to split: ";
             tooltip = "How many times the algorithm will split the dungeon into cells.";
             m_binarySpacePartition.SplitAmount = EditorGUILayout.IntField(new GUIContent(fieldText, tooltip), m_binarySpacePartition.SplitAmount);
@@ -72,7 +73,7 @@ namespace ProceduralGenerationAddOn
 
             // Cell
             fieldText = "Minimum size of cells: ";
-            tooltip = "Cell = is the area which can be split and where the rooms are spawned in. The size of the cell which prevents it from being split. Higher = less likely to get split. High values can cause errors.";
+            tooltip = "Cell = is the area which can be split and where the rooms are spawned in. The size of the cell which prevents it from being split. Higher = less likely to get split.";
             m_binarySpacePartition.MinimumCellSize = EditorGUILayout.IntField(new GUIContent(fieldText, tooltip), m_binarySpacePartition.MinimumCellSize);
 
             // Room
@@ -112,6 +113,8 @@ namespace ProceduralGenerationAddOn
             }
             EditorGUILayout.Space();
             // *************************************************
+
+            GUILayout.Label("Large values can make the dungeon spawn slow. Wait a bit and it should spawn.", m_header4Style);
         }
 
         /// <summary>
@@ -135,7 +138,11 @@ namespace ProceduralGenerationAddOn
         /// </summary>
         public override void DeleteLevel()
         {
-            MonoBehaviour.DestroyImmediate(GameObject.FindObjectOfType<GeneratedDungeon>().gameObject);
+            // Check if there is something to delete first or else there will be an error
+            GeneratedDungeon outputtedTerrain = GameObject.FindObjectOfType<GeneratedDungeon>();
+
+            if (outputtedTerrain != null)
+                MonoBehaviour.DestroyImmediate(outputtedTerrain.gameObject);
         }
 
         /// <summary>

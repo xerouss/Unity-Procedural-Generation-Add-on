@@ -260,7 +260,7 @@ namespace ProceduralGenerationAddOn
             // Set the right/top side node's centre position
             // Add the split position to the centre to make it the right/top side of the parent
             // If this is not added it will be outputted to the same location as the left/bot side
-            // Have to apply it to the new corner since it has been moved from the parent
+            // Have to apply it to the new corner since it has been moved from the parents'
             // Due to being the right/top cell and is not using that corner anymore
             // ____________________________________________ 
             // |                    |                      | 
